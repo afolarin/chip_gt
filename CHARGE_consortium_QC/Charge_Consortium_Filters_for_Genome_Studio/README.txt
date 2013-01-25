@@ -10,3 +10,6 @@ select ok.
 
 
 
+** QUESTION:
+Should the subcolumn filters have ALL or ANY Columns as the primary variable?
+Think this might be a problem in the SNP Review Filter
