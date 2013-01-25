@@ -1,0 +1,189 @@
+#This small function replaces NA's with 0's in array M (used in gamma calculation)
+na2zero=function(m) {
+  m[is.na(m)]=0
+  return(m) 
+}
+
+
+#This function reads this block of info from BED file, converts to a matrix of genotypes (0/1/2/-9) (rows=individuals)
+readbedblock = function( FID, nlines, nsamp ) {
+  g0 = matrix(ncol=nlines, nrow=nsamp)
+	  rowsize = ceiling(nsamp/4)         #Because each byte stored info for 4 people
+  for (isnp in 1:nlines) {
+    rawSNP = readBin(FID, what="raw", n=rowsize)
+    SNPbit = matrix(as.numeric(rawToBits(rawSNP)), ncol=2, byrow=TRUE)[1:nsamp,]
+    g0[,isnp] = SNPbit[,1] + SNPbit[,2] - 10*((SNPbit[,1]==1)&(SNPbit[,2]==0))
+  }
+  return(g0)
+}
+#e.g. of how to call
+#  FID = file(genofile, "rb")
+#  bytes3 = readBin(FID, what="raw", n=3)
+#  if (rawToChar(bytes3)!="l\033\001") stop("BED file not a v0.99 SNP-major BED file")
+#  g0 = readbedblock( FID, 10, 486 )  #10 SNPs, 486 samples
+
+
+#This function reads this block of info from BED file, converts to a matrix of type RAW, genotypes (0/1/2/3, where 3=missing data) (rows=individuals)
+readbedblockRaw = function( FID, nlines, nsamp ) {
+  g0 = matrix(raw(length=0), ncol=nlines, nrow=nsamp)
+  rowsize = ceiling(nsamp/4)         #Because each byte stores info for 4 people
+  for (isnp in 1:nlines) {
+    rawSNP = readBin(FID, what="raw", n=rowsize)
+    SNPbit = matrix(as.numeric(rawToBits(rawSNP)), ncol=2, byrow=TRUE)[1:nsamp,]
+    g0[,isnp] = as.raw( SNPbit[,1] + SNPbit[,2] + 2*((SNPbit[,1]==1)&(SNPbit[,2]==0)) )
+  }
+  return(g0)
+}
+#e.g. of how to call
+#  FID = file(genofile, "rb")
+#  bytes3 = readBin(FID, what="raw", n=3)
+#  if (rawToChar(bytes3)!="l\033\001") stop("BED file not a v0.99 SNP-major BED file")
+#  g0 = readbedblockRaw( FID, 10, 486 )  #10 SNPs, 486 samples
+
+
+#This function reads info from a small BED file (small emough to be read into memory in one go)
+# converts to a matrix of genotypes (0/1/2/-9) (rows=individuals, 0=minor allele)
+# Note that PLINK BED files are organised so that "0"=minor and "2"=major homozygote
+# "ID" parameter specifies how rownames of output matrix are defined.
+#   "FID" = use 1st column in FAM file (FID), "IID" = use 2nd column in FAM file (SID), "FID.IID" = use both names, separated by "."
+readbedfile = function( stem, ID="FID" ) {
+  #Calculate the number of SNPs in .bed file, using it's size and known nsamp
+  genofile = paste(stem,".bed",sep="")
+  nsamp = length(scan( paste(stem,".fam",sep=""), what="character", sep="\n" ))
+  rowsize = ceiling(nsamp/4)         #Because each byte stored info for 4 people
+  bedsize = file.info(genofile)$size
+  nSNP = round((bedsize-3)/rowsize)        #take 1st 3 bytes out
+
+  FID = file(genofile, "rb")
+  bytes3 = readBin(FID, what="raw", n=3)
+  if (rawToChar(bytes3)!="l\033\001") stop("BED file not a v0.99 SNP-major BED file")
+  g0 = readbedblock( FID, nSNP, nsamp )
+  close(FID)
+
+  #Add col labels from .bim and row labels from .fam (assumes FID contains discriminating info)
+  colnames(g0) = read.table(paste(stem,".bim",sep=""), header=FALSE, colClasses=c("NULL","character",rep("NULL",4)))[,]
+  FAM =  read.table(paste(stem,".fam",sep=""), header=FALSE, col.names=c("FID", "IID", "P1", "P2", "SEX", "PHENO"), comment.char="", as.is=TRUE)
+  if (ID=="FID")
+    rownames(g0) = FAM$FID
+  if (ID=="IID")
+    rownames(g0) = FAM$IID
+  if (ID=="FID.IID")
+    rownames(g0) = paste( FAM$FID, FAM$IID, sep="." )
+  return(g0)
+}
+
+# operates on globally declared g0
+readbedblockG = function( FID, nlines, nsamp ) {
+  g0 <<- matrix(ncol=nlines, nrow=nsamp)
+	  rowsize = ceiling(nsamp/4)         #Because each byte stored info for 4 people
+  for (isnp in 1:nlines) {
+    rawSNP = readBin(FID, what="raw", n=rowsize)
+    SNPbit = matrix(as.numeric(rawToBits(rawSNP)), ncol=2, byrow=TRUE)[1:nsamp,]
+    g0[,isnp] <<- SNPbit[,1] + SNPbit[,2] - 10*((SNPbit[,1]==1)&(SNPbit[,2]==0))
+  }
+  return()
+}
+
+# operates on globally declared g0
+readbedfileG = function( stem ) {
+  #Calculate the number of SNPs in .bed file, using it's size and known nsamp
+  genofile = paste(stem,".bed",sep="")
+  nsamp = length(scan( paste(stem,".fam",sep=""), what="character", sep="\n" ))
+  rowsize = ceiling(nsamp/4)         #Because each byte stored info for 4 people
+  bedsize = file.info(genofile)$size
+  nSNP = round((bedsize-3)/rowsize)        #take 1st 3 bytes out
+
+  FID = file(genofile, "rb")
+  bytes3 = readBin(FID, what="raw", n=3)
+  if (rawToChar(bytes3)!="l\033\001") stop("BED file not a v0.99 SNP-major BED file")
+  readbedblockG( FID, nSNP, nsamp )
+  close(FID)
+
+  #Add col labels from .bim and row labels from .fam (assumes FID contains discriminating info)
+  colnames(g0) <<- read.table(paste(stem,".bim",sep=""), header=F, colClasses=c("NULL","character",rep("NULL",4)))[,]
+  rownames(g0) <<- read.table(paste(stem,".fam",sep=""), header=F, colClasses=c("character",rep("NULL",5)))[,]
+  return()
+}
+
+#This function reads a BIM file, returns a dataframe
+#"A1" = minor allele, "A2" = major allele
+readbimfile = function( stem ) {
+  plinkfile = paste(stem,".bim",sep="")
+  BIM =  read.table(plinkfile, header=FALSE, col.names=c("CHR", "SNP", "GDIST", "PDIST", "A1", "A2"), comment.char="", as.is=TRUE)
+  return(BIM)
+}
+
+#This function reads a FAM file, returns a dataframe
+readfamfile = function( stem ) {
+  plinkfile = paste(stem,".fam",sep="")
+  FAM =  read.table(plinkfile, header=FALSE, col.names=c("FID", "IID", "P1", "P2", "SEX", "PHENO"), comment.char="", as.is=TRUE)
+  return(FAM)
+}
+
+#This function converts g0 matrix into scaled form for PCA
+#normstyle: "B"=Bayesian (Price et al 2006), "ML"=ML estimator (Patterson et al 2006)
+#k = Number of previous SNPs on which to regress (assumes BED file sorted in genomic order)
+g2norm = function( g0, normstyle="B", k=0 ) {
+  g0[g0==-9] = NA                 #To apply scale properly, we need NA's
+  u0 = colSums(g0,na.rm=TRUE)    #sum of geno codes over all non-miss indivs
+  n0 = colSums(!is.na(g0))       #N non-missing indivs for each SNP 
+    pBayes = (1+u0)/(2*(1+n0))            #Bayesian posterior est. of (usually) major allele freq
+    pML = u0/n0/2                    #ML est. of (usually) major allele freq
+  if (normstyle=="B") {
+      norm = scale(g0, center=TRUE, scale=sqrt(pBayes*(1-pBayes)) )
+  } else if (normstyle=="ML") {
+      norm = scale(g0, center=TRUE, scale=sqrt(pML*(1-pML)) )
+  } else print("ERROR: normstyle not properly defined")
+  norm[is.na(norm)] = 0          #Re-set missing data =0 on zero-centered axes
+  if (k>0) {                     #Find residuals of regression of each col on previous k cols
+    for (j in (dim(norm)[2]:2)) {
+      norm[,j] = qr.resid( qr(norm[,max(1,j-k):(j-1)]), norm[,j] )
+    }
+  }
+  return( list(norm=norm,pBayes=pBayes,pML=pML) )
+}
+
+#This is alternative function to g2norm
+#Here, if k>0, each SNP is regressed on *next* k SNPs rather than *previous* k SNPs
+g2norm2 = function( g0, normstyle="B", k=0 ) {
+  g0[g0==-9] = NA                 #To apply scale properly, we need NA's
+  u0 = colSums(g0,na.rm=TRUE)    #sum of geno codes over all non-miss indivs
+  n0 = colSums(!is.na(g0))       #N non-missing indivs for each SNP 
+    pBayes = (1+u0)/(2*(1+n0))            #Bayesian posterior est. of (usually) major allele freq
+    pML = u0/n0/2                    #ML est. of (usually) major allele freq
+  if (normstyle=="B") {
+      norm = scale(g0, center=TRUE, scale=sqrt(pBayes*(1-pBayes)) )
+  } else if (normstyle=="ML") {
+      norm = scale(g0, center=TRUE, scale=sqrt(pML*(1-pML)) )
+  } else print("ERROR: normstyle not properly defined")
+  norm[is.na(norm)] = 0          #Re-set missing data =0 on zero-centered axes
+  if (k>0) {                     #Find residuals of regression of each col on next k cols
+    for (j in (1:(dim(norm)[2]-1))) {
+      norm[,j] = qr.resid( qr(norm[,(j+1):min(dim(norm)[2],j+k)]), norm[,j] )
+    }
+  }
+  return( list(norm=norm,pBayes=pBayes,pML=pML) )
+}
+
+#This is alternative function to g2norm
+#Here, we create g1, pBayes and pML as global variables, and pass g0 as a global variable
+g2normG = function( normstyle="B", k=0 ) {
+  g0[g0==-9] = NA                 #To apply scale properly, we need NA's
+  u0 = colSums(g0,na.rm=TRUE)    #sum of geno codes over all non-miss indivs
+  n0 = colSums(!is.na(g0))       #N non-missing indivs for each SNP 
+    pBayes <<- (1+u0)/(2*(1+n0))            #Bayesian posterior est. of (usually) major allele freq
+    pML <<- u0/n0/2                    #ML est. of (usually) major allele freq
+  if (normstyle=="B") {
+      g1 <<- scale(g0, center=TRUE, scale=sqrt(pBayes*(1-pBayes)) )
+  } else if (normstyle=="ML") {
+      g1 <<- scale(g0, center=TRUE, scale=sqrt(pML*(1-pML)) )
+  } else print("ERROR: normstyle not properly defined")
+  g1[is.na(g1)] <<- 0          #Re-set missing data =0 on zero-centered axes
+  if (k>0) {                     #Find residuals of regression of each col on previous k cols
+    for (j in (dim(g1)[2]:2)) {
+      g1[,j] = qr.resid( qr(g1[,max(1,j-k):(j-1)]), g1[,j] )
+    }
+  }
+  return()
+}
+

@@ -1,0 +1,34 @@
+#!/bin/sh
+#$-S /bin/sh
+#$-cwd
+
+######################################################################
+# The QC steps run prior to running Zcall may have produced a list of samples to drop
+# remove the list of bad samples from the Report file prior to carrying out Zcall
+# ARGS:
+# arg1: params file
+# arg2: file containing a list of samples to drop
+# dropSamplesFromPReport.py is a utility script to drop samples from an Illumina GenomeStudio report. 
+# Inputs: are the report and a text file with samples to drop (one sample per line). Sample name is the same as the root before the ".GType"
+# Output: a report file with the list of samples filtered out <basename>.filt.report
+
+#USAGE: qsub -q <queue.q> <path>/sge_dropBadSamples <PARAMs_FILE> <SampleDropListFile>
+######################################################################
+
+#args
+params=${1}
+dropList=${2}
+
+##need to define path to cwd...or might need to be path to the zcall_doCall.sh script if better outside of working dir
+cwdir=`pwd`
+
+#source the params file with specified variables req to run jobs 
+source ${cwdir}/${params}
+
+#duplicate the report file in the cwd
+cp ${data_path}/${basename}.report ${cwdir}/${basename}_dup.report
+
+# call dropSamplesFromReport.py
+#${zcall_path}/dropSamplesFromReport.py ${cwdir}/${basename}_dup.report ${cwdir}/${dropList} > ${basename}.filt.report
+#Note there is a faster script available in additional scripts which may swap to later #TODO
+${zcall_path}/dropSamplesFromReport_FasterVersion.py ${cwdir}/${basename}_dup.report ${cwdir}/${dropList} > ${basename}_filt.report

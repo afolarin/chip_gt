@@ -1,0 +1,68 @@
+#DOgamma.txt
+#Takes an EIGENSOFT ".evec" file and a plink ".bed" file, generates a ".gam" file
+#call as follows (optional "10" specifies the number of PCA axes to convert, otherwise will do all axes stored in test.evec
+#R --args test.evec test.bed test.gam 10 < DOgamma.txt
+
+t=commandArgs()
+args = t[((1:length(t))[t=="--args"]+1):length(t)]
+pcafile = args[1]
+genofile = args[2]
+outfile = args[3]
+
+
+#Load PCA output file (EIGENSOFT format)
+  FIDpca = file(pcafile,"r")
+  lambda = strsplit(readLines(FIDpca,n=1),split=" +")[[1]] [c(-1,-2)]  #Note " +" means match any number of spaces
+  NNaxes = length(lambda)
+  eigvec = as.matrix( read.table(FIDpca,header=FALSE,comment.char="",colClasses=c("NULL",rep("numeric",NNaxes),"NULL")) )
+  close(FIDpca)
+if (length(args)==3)  Naxes=NNaxes  else  Naxes=as.integer(args[4])
+nsamp =dim(eigvec)[1]
+
+#Calculate the number of SNPs in .bed file, using it's size and known nsamp
+rowsize = ceiling(nsamp/4)         #Because each byte stored info for 4 people
+bedsize = file.info(genofile)$size
+nSNP = round((bedsize-3)/rowsize)        #take 1st 3 bytes out
+
+
+
+#This small function replaces NA's with o's in array M (used in gamma calculation)
+na2zero=function(m) {
+  m[is.na(m)]=0
+  return(m) 
+}
+
+readbed = function( FID, nlines, nsamp ) {           #Reads this block of info from PED file, converts to a matrix of genotypes (0/1/2/-9) (rows=individuals)
+  g0 = matrix(ncol=nlines, nrow=nsamp)
+  rowsize = ceiling(nsamp/4)         #Because each byte stored info for 4 people
+  for (isnp in 1:nlines) {
+    rawSNP = readBin(FID, what="raw", n=rowsize)
+    SNPbit = matrix(as.numeric(rawToBits(rawSNP)), ncol=2, byrow=TRUE)[1:nsamp,]
+    g0[,isnp] = SNPbit[,1] + SNPbit[,2] - 10*((SNPbit[,1]==1)&(SNPbit[,2]==0))
+  }
+  return(g0)
+}
+
+  block <- 1000                                      #block size (N. SNPs to read at a time)
+  FIDout = file(outfile, "w")
+  FID = file(genofile, "rb")
+  bytes3 = readBin(FID, what="raw", n=3)
+  if (rawToChar(bytes3)!="l\033\001") stop("BED file not a v0.99 SNP-major BED file")
+  for (i in 0:(nSNP%/%block)) {
+    print(i*block)
+    nlines <- min((i+1)*block,nSNP) - i*block
+    gamma = matrix( rep(0,nlines*Naxes), ncol=Naxes )
+    g0 <- readbed( FID, nlines, nsamp )/2                                  #"-4.5" = missing, {0,0.5,1}=genos
+    n0 = colSums(g0<0)                                                     #Number of non-missing values for each SNP
+    g0[g0<0] = NA                                                          #Convert "4.5" to NA
+    g0 = scale(g0,center=TRUE,scale=FALSE)                                 #Center on mean (makes a difference for missing data
+    if (Naxes>0) {
+    for (iPC in 1:Naxes) {
+      a = eigvec[,iPC]                                           # a is the ith eigen vector = "ancestry" coefficient for each indiv
+      gamma[,iPC] = (t(a)%*%na2zero(g0)) / (t(a^2)%*%(!is.na(g0)))     # gamma is a regression coefficient for each different SNP.  When there is missing data, sum(a^2) is different for each SNP
+    }
+    }
+    write.table( gamma, file=FIDout, row.names=FALSE, col.names=FALSE )    #since "file" is a connection, stays open after call
+  }
+  close(FID)
+  close(FIDout)

@@ -1,0 +1,153 @@
+#assignregiongeno.txt
+#Takes a BED file that has already been trimmed to a particular region and given non-missing phenotype
+#Assigns individuals by k-means clustering to "region-wide" genotypes, as described in Weale et al (submitted)
+#Requires EIGENSOFT to do PCA.  Requires R to do k-means clustering
+
+#Call (where "yourBEDstem" is stem name for BED/BIM/FAM files trimmed to region in question):
+#R --vanilla --slave --args stem=yourBEDstem < /data1/goldsteinlab/Mike/Docs/EIGENSOFTplus/ver9/assignregiongeno.txt
+
+#Set defaults
+stem="plink"                    #Sets the stemname for .bed, .bim and .fam files
+altnormstyle="N0"
+numoutevec=1 
+numoutlieriter=0                #sets maximum number of outlier removal iterations
+nsnpldregress=0 
+noxdata="NO" 
+numoutlierevec=0               #number of PCs along which to remove outliers during each outlier removal iteration
+outliersigmathresh=6           #number of standard deviations which an individual must exceed to be removed as an outlier
+numgamma=1                     #Sets the number of axes for which SNP loadings are calculated
+numplot=1                      #Sets the number of axes for which plots calculated
+ESOFTdir="/research/labs/goldsteinlab/software/EIGENSOFT"                #Sets the location of the EIGENSOFT directory
+
+#Override with args if set
+t=commandArgs()
+if (charmatch("--args",t,nomatch=-1)>=0) args = t[((1:length(t))[t=="--args"]+1):length(t)] else args=""
+if (charmatch("stem=",args,nomatch=-1)>=0) stem = strsplit(args[charmatch("stem=",args)],split="=")[[1]][2]
+
+
+#make copies of .bim and .fam files, Create .par file with same stem name
+print("Reading arguments...")
+system(paste("cp ",stem,".bim ",stem,".pedsnp",sep=""))
+system(paste("cp ",stem,".fam ",stem,".pedind",sep=""))
+FID = file(paste(stem,".par",sep=""),"w")
+writeLines(paste("genotypename:    ",stem,".bed",sep=""),FID)
+writeLines(paste("snpname:         ",stem,".pedsnp",sep=""),FID)
+writeLines(paste("indivname:       ",stem,".pedind",sep=""),FID)
+writeLines(paste("evecoutname:     ",stem,".evec",sep=""),FID)
+writeLines(paste("evaloutname:     ",stem,".eval",sep=""),FID)
+writeLines(paste("altnormstyle:    ",altnormstyle,sep=""),FID)
+writeLines(paste("numoutevec:      ",as.character(numoutevec),sep=""),FID)
+writeLines(paste("numoutlieriter:  ",as.character(numoutlieriter),sep=""),FID)
+writeLines(paste("nsnpldregress:   ",as.character(nsnpldregress),sep=""),FID)
+writeLines(paste("noxdata:         ",noxdata,sep=""),FID)
+writeLines(paste("numoutlierevec:  ",as.character(numoutlierevec),sep=""),FID)
+writeLines(paste("outliersigmathresh:  ",as.character(outliersigmathresh),sep=""),FID)
+writeLines(paste("outlieroutname:  ",stem,".outliers",sep=""),FID)
+close(FID)
+
+
+#Call EIGENSOFT
+print("Calling EIGENSOFT...")
+system(paste(ESOFTdir, "/bin/smartpca -p ", stem, ".par > ", stem, ".Sout", sep=""))
+
+
+#Read in values from .evec file
+pcafile = paste(stem,".evec",sep="")
+  FIDpca = file(pcafile,"r")
+  lambda = strsplit(readLines(FIDpca,n=1),split=" +")[[1]] [c(-1,-2)]  #Note " +" means match any number of spaces
+  NNaxes = length(lambda)
+  eigvec = as.matrix( read.table(FIDpca,header=FALSE,row.names=1,comment.char="",colClasses=c("character",rep("numeric",NNaxes),"NULL")) )
+  close(FIDpca)
+
+
+#Calculate the number of SNPs in .bed file, using it's size and known nsamp
+genofile = paste(stem,".bed",sep="")
+####nsamp = dim(eigvec)[1]    This will not work if the number of SNPs is less than the number of individuals
+nsamp = as.numeric(strsplit(system(paste("wc ",stem,".pedind",sep=""),intern=TRUE),split=" +")[[1]][2])
+rowsize = ceiling(nsamp/4)         #Because each byte stored info for 4 people
+bedsize = file.info(genofile)$size
+nSNP = round((bedsize-3)/rowsize)        #take 1st 3 bytes out
+
+
+#This small function replaces NA's with o's in array M (used in gamma calculation)
+na2zero=function(m) {
+  m[is.na(m)]=0
+  return(m) 
+}
+#This function eads this block of info from BED file, converts to a matrix of genotypes (0/1/2/-9) (rows=individuals)
+readbed = function( FID, nlines, nsamp ) {
+  g0 = matrix(ncol=nlines, nrow=nsamp)
+	  rowsize = ceiling(nsamp/4)         #Because each byte stored info for 4 people
+  for (isnp in 1:nlines) {
+    rawSNP = readBin(FID, what="raw", n=rowsize)
+    SNPbit = matrix(as.numeric(rawToBits(rawSNP)), ncol=2, byrow=TRUE)[1:nsamp,]
+    g0[,isnp] = SNPbit[,1] + SNPbit[,2] - 10*((SNPbit[,1]==1)&(SNPbit[,2]==0))
+  }
+  return(g0)
+}
+
+#Do kmeans analysis on g0 matrix.  We assume that nSNPs is small so g0 can be read in one go
+  print("Calculating kmeans solutions...")
+  FID = file(genofile, "rb")
+  bytes3 = readBin(FID, what="raw", n=3)
+  g0 <- readbed( FID, nSNP, nsamp )    #"-9" = missing, {0,1,2}=genos
+  n0 = colSums(g0>=0)         #Number of non-missing values for each SNP
+  g0[g0<0] = NA              #Convert "-9" to NA
+  u0 = colSums(g0,na.rm=TRUE)               #sum of geno codes over all indivs (remove missing)
+  u=u0/n0                                    #mean geno code
+  p=(1+u0)/(2*(1+n0))                        #Bayesian posterior estimate of allele freq
+  norm = scale(g0, center=TRUE, scale=sqrt(p*(1-p)) )
+  norm[is.na(norm)] = 0                     #Re-set missing data =0 on zero-centered axes
+  kres0 = kmeans(norm, centers=2, nstart=10);  kclust0 = kres0$cluster
+  #Obtain projection onto axis joining the 2 main centroids
+  norm0 = norm - matrix(rep(1,nsamp),nrow=nsamp)%*%kres0$centers[1,] 
+  rotax0 = norm0 %*% t(diff(kres0$centers)) /sum(diff(kres0$centers)^2)
+  #Use rotax0 axis to nominate N/N group="1" (=group with smallest var on rotax0)
+  var_c1 = var(rotax0[kclust0==1])
+  var_c2 = var(rotax0[kclust0==2])
+  if (var_c1>var_c2) {
+    kclust0[kclust0==2] = 3;  kclust0[kclust0==1] = 2;  kclust0[kclust0==3] = 1
+  }
+  Nfreq = sqrt(sum(kclust0==1)/length(kclust0));  IIfreq = (1-Nfreq)^2;  IIcount = ceiling(IIfreq*length(kclust0))
+  #Orient rotax axis so that NN individuals are to the LEFT
+  if ( mean(rotax0[kclust0==1])>mean(rotax0[kclust0==2]) )   rotax0 = -(rotax0-1)
+  #Find indices for right-most IIcount individuals
+  IIindex = order(-rotax0)[1:IIcount]
+  #Re-do kmeans clustering with inv/inv people removed
+  kres4 = kmeans(norm[-IIindex,], centers=2, nstart=10)
+  norm4 = norm - matrix(rep(1,nsamp),nrow=nsamp)%*%kres4$centers[1,] 
+  rotax4 = norm4 %*% t(diff(kres4$centers)) /sum(diff(kres4$centers)^2)
+  #Orient rotax4 axis so that inv/inv individuals are to the RIGHT
+  if ( mean(rotax4[IIindex])<0 ) rotax0 = -(rotax0-1)
+  #Re-calculate kclust4 using >1.5 as a guide
+  kclust4=kclust0*0; kclust4[-IIindex] = kres4$cluster
+  if (mean(rotax4[kclust4==1])>mean(rotax4[kclust4==2])) {  #swap "1" and "2" clusters if necessary
+    kclust4[kclust4==2] = 3;  kclust4[kclust4==1] = 2;  kclust4[kclust4==3] = 1
+  }
+  #Re-do inv/inv membership based on membership of >1.5
+  kclust4[(rotax4>1)&(rotax4<=1.5)]=2
+  kclust4[rotax4>1.5]=3
+
+  #Save eigvec, kclusters and rotated axis as stem_Ktab.tsv
+  eigvecS = make.unique(rep("PC",numoutevec+1),sep="")[2:(numoutevec+1)]
+  write.table( data.frame(rownames(eigvec),eigvec,rotax4,kclust4), file=paste(stem,"_Ktab.tsv",sep=""), quote=FALSE, sep="\t", row.names=FALSE, col.names=c("SubjectID",eigvecS,"Kaxis","Kclust") )
+
+  #Write color-coded figures as pdf 
+  pdf(paste(stem,"_Khist.pdf",sep=""))
+    x=rotax4
+    c=kclust4
+    brk = seq(floor(min(x)*10)/10, ceiling(max(x)*10)/10, by=0.05)
+    h1= hist(x[c==1], breaks=brk, plot=FALSE)
+    h2= hist(x[c==2], breaks=brk , plot=FALSE)
+    h3= hist(x[c==3], breaks=brk, plot=FALSE)
+    data <- t(cbind(h1$counts,h2$counts,h3$counts))
+    barplot(data, beside=FALSE, col=(2:4), space=0, width=1, xlab="k-means axis", ylab="Individual counts")  
+    ticks = pretty(brk); convert = (ticks-min(brk))/(max(brk)-min(brk))*length(h1$counts)
+    axis(1, at=convert, labels=ticks)
+    #lines((d$x-min(brk))/(max(brk)-min(brk))*length(h1$counts), d$y*length(x)*diff(h1$mids[1:2]), lty=2)
+  dev.off()
+
+print("**************************************")
+print("program <assignregiongeno.txt> completed.")
+print("**************************************")
+

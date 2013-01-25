@@ -1,0 +1,85 @@
+#regress.txt
+#performs regression analyses of all y columns in yfile against all columns in xfile, together with covariates in cfile
+#results are saved in ofile
+#R --vanilla --slave --args y=yfile.txt c=cfile.txt x=xfile.txt o=ofile.txt m=-9 < /data1/goldsteinlab/Mike/Docs/EIGENSOFTplus/ver3/regress.txt
+#All args following "--args" and before "<" are manditory
+#yfile="Anna_memEig.phe"; xfile="axes6-10.cov"; cfile="Anna_memEig.cov"; ofile="test.out"; miss=-9
+
+#y=			PLINK .phe style phenotype file.  1st col=FamID,  2nd col=IndID
+#c=			PLINK .cov style covariates file.  1st col=FamID,  2nd col=IndID.  Use c="" if you do not want covariates
+#x=			PLINK .cov style x-variables file.  1st col=FamID,  2nd col=IndID
+#o=			Outfile - stores results for each y-variable regressed against each x-variable separately
+#m=-9             Missing data symbol
+
+t=commandArgs()
+args = t[((1:length(t))[t=="--args"]+1):length(t)]
+if (charmatch("y=",args,nomatch=-1)>=0) yfile = strsplit(args[charmatch("y=",args)],split="=")[[1]][2]
+if (charmatch("c=",args,nomatch=-1)>=0) cfile = strsplit(args[charmatch("c=",args)],split="=")[[1]][2]
+if (charmatch("x=",args,nomatch=-1)>=0) xfile = strsplit(args[charmatch("x=",args)],split="=")[[1]][2]
+if (charmatch("o=",args,nomatch=-1)>=0) ofile = strsplit(args[charmatch("o=",args)],split="=")[[1]][2]
+if (charmatch("m=",args,nomatch=-1)>=0) miss = as.numeric(strsplit(args[charmatch("m=",args)],split="=")[[1]][2])
+
+
+############################FUNCTIONS##########################################
+##alignBtoA: Function to align 2 dataframes
+#return=0:	both df's already aligned
+#return=1:	df's not aligned, but all rows in A also in B
+#return=2:	same #rows in B as in A, but they don't overlap
+#return=3:	more rows in A than in B
+#return=4:	more rows in B than in A
+alignBtoA = function(dfA,dfB) {
+  if (dim(dfA)[1]>dim(dfB)[1]) {
+      aligncode=3
+      aligndfB = dfB[rownames(dfA)[rownames(dfA)%in%rownames(dfB)],]
+  } else if (dim(dfA)[1]<dim(dfB)[1]) {
+      aligncode=4
+      aligndfB = dfB[rownames(dfA)[rownames(dfA)%in%rownames(dfB)],]
+  } else if ( all(rownames(dfA)==rownames(dfB)) ) {
+      aligncode=0
+      aligndfB = dfB
+  } else if ( sum(rownames(dfA)%in%rownames(dfB))==dim(dfA)[1] ) {
+      aligncode=1
+      aligndfB = dfB[rownames(dfA),]
+  } else {       #same number of rows, but they don't match perfectly
+      aligncode=2
+      aligndfB = dfB[rownames(dfA)[rownames(dfA)%in%rownames(dfB)],]
+  }
+  return( list(dfB=aligndfB,code=aligncode) )
+}
+
+
+###########################MAIN################################################
+#Read in each file.  Order according to rownames of y-file
+
+PHE = read.table(yfile, header=FALSE, row.names=1)
+X1 = read.table(xfile, header=FALSE, row.names=1)
+X = alignBtoA(PHE,X1)$dfB
+if (!is.na(cfile)) {
+  COV1 = read.table(cfile, header=FALSE, row.names=1)
+  COV = alignBtoA(PHE,COV1)$dfB
+}
+
+#Convert missing data to "NA"
+PHE[PHE==miss] = NA
+X[X==miss] = NA
+COV[COV==miss] = NA
+
+FID = file(ofile, "w")
+writeLines("y#\tx#\txcoef\tpval", con=FID) 
+for (iphe in 2:dim(PHE)[2])
+for (ix in 2:dim(X)[2]) {
+  if (!is.na(cfile)) {
+    covS = ""
+    for (i in 2:dim(COV)[2]) covS = paste(covS, "+COV[,", as.character(i), "]", sep="")
+  } else {
+    covS = ""
+  }
+  y = PHE[,iphe]
+  x = X[,ix]
+  mod1 = lm( as.formula( paste("y ~ x",covS) ) )
+  mod2 = drop1( mod1, ~ x, test="F" )
+  pval = mod2["x","Pr(F)"]
+  writeLines(paste(as.character(iphe-1), "\t", as.character(ix-1), "\t", as.character(mod1$coefficients["x"]), "\t", as.character(pval), sep=""), con=FID) 
+}
+close(FID)
+

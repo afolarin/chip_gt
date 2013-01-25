@@ -1,0 +1,195 @@
+#EIGENMEW_2006_12_31.txt
+#This file is "UNDER CONSTRUCTION".  So far I've altered to allow reading a large EIG file (in Unix text format) into R
+#performs EIGENSTRAT using standard "EIGENSTRAT" genotype file
+#has option to input PCA file or estimate PCA file
+#has option to do "standard" EIGENSTRAT or logistic EIGENSTRAT
+#has option to do permutations as well
+
+## INPUT FILES & SETUP PARAMETERS
+
+genofile = "schiz_Nov22_overlap_nors1991624.eig"               #EIGENSTRAT genotypes, 0/1/2 + 9=missing  !!!FILE MUST BE IN "UNIX" text format! (LF line ending only)
+nSNP = 313504                              #Number of SNPs in genofile
+pcafile = "schiz_Nov22_noXchr.pca"                #Outfile from EIGENSTRAT "pca" command.  Set="" if you want to use internal pca command 
+Naxes = 10                                 #How many PCA axes to adjust on?  Set=0 for (N-1)r^2.  Set=-1 for Nr^2 (classic "Armitage Trend Test"
+phenofile = "schiz_Nov22.phe"             #PED-style phenotype file (whitespace-separated, no header).  !!!IMPORTANT!!! "1"/"2" coding accepted only
+phenocol  = 1	                         #Which column to inport from phenofile (Note 1st 2 cols always skipped (assumed to have sampleID's) so actual col = phenocol+2)
+genderfile = "munich_abd_dec10_maf001.fam"
+gendercol = 3                               #Which column to inport from genderfike (Note 1st 2 cols always skipped (assumed to have sampleID's) so actual col = gendercol+2)
+outfile = "exampleMiss_mew_eig.out"        #Stem for output of EIGENSTRAT results
+Nperm = 1000                               #How many full permutations of EIGENSTART-corrected test on each SNP?
+Ntop = 200                                 #How many bottom-ranked p-values to save to permfile?
+eigmethod = "genoLRT"                      #Determines the test method
+
+
+
+## PRELIMINARY STUFF
+#To increase memory size for WGA !!!!BUT BEWARE THIS SEEMS TO SLOW R DOWN!!!
+#memory.limit(size=2000)
+
+pheno = read.table(phenofile, header=FALSE, sep="")[,2+phenocol]
+nsamp = length(pheno)
+gender = as.factor( read.table(genderfile, header=FALSE, sep="")[,2+gendercol] )
+
+
+#Load PCA output file (if specified)
+if (pcafile!="") {
+  FIDpca = file(pcafile,"r")
+  NNaxes =  scan(FIDpca,nlines=1)
+  lambda = scan(FIDpca,nlines=NNaxes)
+  eigvec = matrix(scan(FIDpca,nlines=nsamp),ncol=NNaxes,byrow=TRUE)
+  close(FIDpca)
+}
+
+
+##FUNCTIONS
+##  pca performs SVD of genotype data, as in EIGENSTRAT pca command
+pca=function(genofile,nsamp,nSNP,Naxes)
+{
+  block <- 1000                                      #10000 seems to be optimal block size
+  covar = matrix(rep(0,nsamp*nsamp),ncol=nsamp)
+  FID = file(genofile, "rb")
+  for (i in 0:(nSNP%/%block)) {
+    print(i*block)
+    nlines <- min((i+1)*block,nSNP) - i*block
+    g0 <- matrix( as.numeric(readBin(FID, what="raw", n=(nsamp+1)*nlines)) ,nrow=nsamp+1, byrow=FALSE )[1:nsamp,] - utf8ToInt("0")          #note I've transposed the matrix by setting "byrow=FALSE"
+    g0[g0==9] = NA                            #To apply scale properly, we need NA's
+    u0 = colSums(g0,na.rm=TRUE)               #sum of geno codes over all indivs (remove missing)
+    n0 = colSums(!is.na(g0))                  #N non-missing indivs for each SNP 
+    u=u0/n0                                    #mean geno code
+    p=(1+u0)/(2*(1+n0))                        #Bayesian posterior estimate of allele freq
+
+    norm = scale(g0, center=TRUE, scale=sqrt(p*(1-p)) )
+    norm[is.na(norm)] = 0                     #Re-set missing data =0 on zero-centered axes
+
+    covar = covar + norm%*%t(norm)            #We can build up SS matrix iteratively
+  }
+  close(FID)
+  y = eigen(covar)
+  eigvec = y$vectors[,1:Naxes]
+  #NB if "norm" contains ALL the data, then prcomp(t(norm),center=FALSE,scale=FALSE)$rotation[,1:Naxes] will produce the identical matrix to "eigvec"
+}
+
+#This small function replaces NA's with o's in array M (used in "eigenstrat" function)
+na2zero=function(m) {
+  m[is.na(m)]=0
+  return(m) 
+}
+
+##eigenstrat performs the genoptype-adjustment part of EIGENSTRAT.  Eigenvectors must be calculated elsewhere (pca function or EIGENSTRAT pca command)
+eigenstrat = function(genofile,nsamp,nSNP,pheno,eigvec,Naxes) {
+  #start by adjusting pheno
+  pheno = scale(pheno,center=TRUE,scale=FALSE)      #Center on mean
+  pheno1 = pheno                                    #Keep any missing values in pheno - stored in pheno1
+  pheno[ is.na(pheno) ] = 0                         # set any missing pheno values to zero (will not count in gammapheno calculation)
+  if (Naxes>0) {
+  for (iPC in 1:Naxes) {
+    a = eigvec[,iPC]                                            # a is the ith eigen vector = "ancestry" coefficient for each indiv
+    gammapheno = (t(a)%*%pheno) / sum(a[!is.na(pheno1)]^2)      # gammapheno is the regression coefficient for pheno on this ancestry axis
+    pheno1 = pheno1 - a%*%gammapheno                            # g1 is the new data set adjusted by the ith eigen vector. 
+  }
+  }
+
+  block <- 1000                                      #10000 seems to be optimal block size
+  #Now adjust each block, generate genos, and perform WALD test of pheno vs each geno column (N-K-1)*r^2, where r^2 is squared correlation.
+  W=rep(0,nSNP)
+  FID = file(genofile, "rb")
+  for (i in 0:(nSNP%/%block)) {
+    print(i*block)
+    nlines <- min((i+1)*block,nSNP) - i*block
+    g0 <- ( matrix( as.numeric(readBin(FID, what="raw", n=(nsamp+1)*nlines)) ,nrow=nsamp+1, byrow=FALSE )[1:nsamp,] - utf8ToInt("0") )/2         #"4.5" = missing, {0,0.5,1}=genos
+    n0 = colSums(g0<4)                                                     #Number of non-missing values for each SNP
+    g0[g0>4] = NA                                                          #Convert "4.5" to NA
+    g0 = scale(g0,center=TRUE,scale=FALSE)                                 #Center on mean (makes a difference for missing data - found this out after many exchanged emails with Alkes.  This centering step is NOT in Price et al but IS in the original EIGENSTRAT code)
+    if (Naxes>0) {
+    for (iPC in 1:Naxes) {
+      a = eigvec[,iPC]                                           # a is the ith eigen vector = "ancestry" coefficient for each indiv
+      gamma = (t(a)%*%na2zero(g0)) / (t(a^2)%*%(!is.na(g0)))     # gamma is a regression coefficient for each different SNP.  When there is missing data, sum(a^2) is different for each SNP
+      g0 = g0 - a%*%gamma                                        # g0 is the new data set adjusted by the ith eigen vector. 
+    }
+    }
+    W[(i*block+1):(i*block+nlines)] = (n0-Naxes-1) * cor(g0,pheno1,use="pairwise.complete.obs",method="pearson")^2
+  }
+  return(W)
+}
+
+## Function to do EIGEN adjustment using logistic regression.  Full geno model.  LRT 
+eigengenoLRT = function(genofile,nsamp,nSNP,pheno,gender,eigvec,Naxes) {
+  y = pheno-1                          #convert 1/2 coding to 0/1 coding
+  block <- 1000                                      #10000 seems to be optimal block size
+  W=rep(0,nSNP)
+  FID = file(genofile, "rb")
+  for (i in 0:(nSNP%/%block)) {
+    print(i*block)
+    nlines <- min((i+1)*block,nSNP) - i*block
+    g0 <- ( matrix( as.numeric(readBin(FID, what="raw", n=(nsamp+1)*nlines)) ,nrow=nsamp+1, byrow=FALSE )[1:nsamp,] - utf8ToInt("0") )         #9 = missing, {0,1,2}=genos
+    g0[g0>4] = NA                                              #Convert "9" to NA.  Note g0 has SNPs in columns
+    for (j in 1:nlines)
+      geno = as.factor(g0[,j])
+      modGENO2DF = glm(y~geno+gender+eigvec, family=binomial)
+      W[i*block+j] = drop1( modGENO2DF, ~geno, test="Chisq" )$LRT[2]
+    }
+  }
+  return(W)
+}
+
+
+##################### MAIN SECTION
+
+### Find PCA axes if no PCA file specified
+if (pcafile=="") {
+  eigvec = pca(genofile,nsamp,nSNP,Naxes)
+}
+
+## Perform EIGENSTRAT compensation on raw pheno if eigmethod = "standard"
+if (eigmethod=="standard") {
+  W = eigenstrat(genofile,nsamp,nSNP,pheno,eigvec,Naxes)
+  P = 1-pchisq(W,1)
+}
+
+## Perform LRT genotypic tests if requested
+if (eigmethod=="genoLRT") {
+  W = eigengenoLRT(genofile,nsamp,nSNP,pheno,gender,eigvec,Naxes)
+  P = 1-pchisq(W,2)
+}
+
+##Save results
+outlist = data.frame(W=W,P=P)
+write.table(outlist, file=paste(outfile,"_raw.txt",sep=""), col.names=TRUE,row.names=FALSE,quote=FALSE,sep="\t")
+
+##Do permutations if Nperm>0
+## Save real EIGENSTRAT results (bottom Ntop values), then perform EMP2 permuations
+if (Nperm>0) {
+  FIDout = file(paste(outfile,"perm.txt",sep=""),"w")         #stores permutation results, plus 1st line = bottom Ntop real p-values
+  cat(-log(sort(pval)[1:Ntop]),file=FIDout,sep=" "); cat("\n",file=FIDout)
+  EMP2 = rep(1,nSNP)            #Stores N times we get permP<=obsP ANYWHERE.  Start with one hit for own obs.
+  for (iperm in 1:Nperm) {
+    permpval = eigenstrat(dataG1,dataG2,matrix(sample(pheno),ncol=1),eigvec,Naxes)
+    cat(-log(sort(permpval)[1:Ntop]),file=FIDout,sep=" "); cat("\n",file=FIDout)
+    EMP2 = EMP2 + (min(permpval)<=pval)
+  }
+  close(FIDout)
+  EMP2 = EMP2/(Nperm+1)
+  if (printMAP==TRUE) {
+    outlist = data.frame(SNP=snpnames,CHR=mapinfo$Chr,POSN=mapinfo$Position,P=pval,EMP2=EMP2)
+  } else {
+    outlist = data.frame(SNP=snpnames,P=pval,EMP2=EMP2)
+  }
+  write.table(outlist, paste(outfile,"rawperm.txt",sep=""), col.names=TRUE,row.names=FALSE,quote=FALSE,sep="\t")
+  outlist = outlist[ order(outlist$P), ]
+  write.table(outlist, paste(outfile,"sortedperm.txt",sep=""), col.names=TRUE,row.names=FALSE,quote=FALSE,sep="\t")
+}
+
+#To call in batch mode:
+#R CMD BATCH --no-save R_eigencodeMEW_schiz_Nov08_MAF001_K-1_2006_11_11.txt Rscreenout.txt &
+#ps = 3757
+
+#To call using qsub:
+#Create "R_eigencodeMEW_schiz_Nov08_MAF001_K-1_2006_11_11a.q":
+#		#!/bin/tcsh
+#		#$ -S /bin/tcsh -cwd  
+#		#$ -o Qscreenouta.out -j y  
+#		#    
+#		R CMD BATCH --no-save R_eigencodeMEW_schiz_Nov08_MAF001_K-1_2006_11_11a.txt Rscreenouta.txt
+#qhost -> find underused machines with x64 + 4GB
+#cd /data1/goldsteinlab/GSK-Schizo/Nov7-2006/MEW_files
+#qsub -q ape.q   R_eigencodeMEW_schiz_Nov08_MAF001_K-1_2006_11_11a.q

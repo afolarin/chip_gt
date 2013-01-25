@@ -1,0 +1,7 @@
+version 4:  Save SNP outliers to single file.  Add indiv outliers as saved file.
+version 5:  Fixed minor problem where subjectID not written properly to "INDoutlier.txt" file (previously, only row# given)
+version 6:  Allows "numplot=0" option (in which case no plots are made)
+version 7:  Adds additional EIGENSOFT options to be set (outlier removal, Fst output)
+version 8:  Adds "kmeans" option - print out kmeans groups, save rotated axis to "evec" style output file
+version 9:  Add completely automated kmeans assignment method for inversion genotypes + histogram of SNP loadings
+version 10: Add output file of kmeans0 and kmeans4 SNP loadings

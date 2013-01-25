@@ -1,0 +1,40 @@
+#Set of functions to read in .eval, .evec, .gam and .load files
+
+#This function reads .evec file and returns PC "scores" as matrix.  
+#Lambda values are attached as extra object to attributes list.
+readevecfile = function( stem ) {
+  pcafile = paste(stem,".evec",sep="")
+  FIDpca = file(pcafile,"r")
+  lambda = strsplit(readLines(FIDpca,n=1),split=" +")[[1]] [c(-1,-2)]  #Note " +" means match any number of spaces
+  NNaxes = length(lambda)
+  ESscore = as.matrix( read.table(FIDpca, header=FALSE, row.names=1, comment.char="", colClasses=c("character",rep("numeric",NNaxes),"NULL")) )
+  close(FIDpca)
+  colnames(ESscore) = paste("PC", 1:NNaxes, sep = "")
+  attributes(ESscore) <- list(dim=dim(ESscore), dimnames=dimnames(ESscore), lambda=lambda)
+  return(ESscore)
+}
+
+#This function reads .eval file and returns eigenvalues ("lambda") as vector
+readevalfile = function( stem ) {
+  pcafile = paste(stem,".eval",sep="")
+  ESlam = scan( pcafile, what=double(0) )
+  return(ESlam)
+}
+
+#This function reads .gam file and returns gamma values as matrix (correlation of each SNP coded {0,0.5,1} against ESscore
+readgamfile = function( stem ) {
+  pcafile = paste(stem,".gam",sep="")
+  ESgam = as.matrix( read.table(pcafile,header=FALSE,comment.char="",colClasses="numeric") )
+  colnames(ESgam) = paste("PC", 1:dim(ESgam)[2], sep = "")
+  return(ESgam)
+}
+
+#This function reads .load file and returns "SNP weighting" values as matrix, but omits chr and map info
+readloadfile = function( stem ) {
+  pcafile = paste(stem,".load",sep="")
+  ESload =  as.matrix( read.table(pcafile, header=FALSE, row.names=1, comment.char="", as.is=TRUE) )
+  ESload = ESload[,-(1:2)]
+  ncols=dim(ESload)[2]
+  colnames(ESload) = paste("PC", 1:ncols, sep = "")
+  return(ESload)
+}

@@ -1,0 +1,22 @@
+#!/bin/sh
+#$-S /bin/sh
+#$-cwd
+#$-t 3-15
+
+#Description: Run SGE batch job to get calibration thresholds from z=3 to z=15 for zcall-v3.3_steps
+#USAGE: qsub -q <queue.q> sge_calcThresholds <paramsfile> <min-intensity>
+
+# args
+params=${1}
+I=${2}
+
+
+##need to define path to cwd...or might need to be path to the zcall_doCall.sh script if better outside of working dir
+cwdir=`pwd`
+
+#source the params file with specified variables req to run jobs 
+source $cwdir/${params}
+
+#call zcall_doCall.sh for the thresholds
+/bin/bash $cwdir/zcall_doCall.sh ${params} $SGE_TASK_ID ${I}
+
