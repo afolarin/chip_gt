@@ -1,0 +1,1 @@
+[ [ ("Call Freq" < 0.97 ) AND ("Chr" != Y ) ] OR [ ("Call Freq" < 0.99 ) AND ("Chr" != Y ) ] OR ("Minor Freq" = 0 ) OR ("Rep Errors" > 2 ) OR ("P-P-C Errors" > 1 ) OR ("P-P-C Errors" > 1 ) ]
