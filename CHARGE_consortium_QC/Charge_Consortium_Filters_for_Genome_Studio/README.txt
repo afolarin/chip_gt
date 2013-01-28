@@ -26,18 +26,18 @@ Filters for Steps in this protocol are provided here.
 inspect and manually re-cluster autosomal SNPs when possible (exclude X, Y,
 XY and MT loci since all were reviewed in step 8 above). Do not zero out SNPs.
 
-* Use Filter: CHARGE_SNP_Review_Criteria_3.flt
+* Use Filter: CHARGE_SNP_Review_Criteria.flt
  
 
 11) Visually inspect SNPs with the following criteria and re-cluster those that look
 recoverable.
 
-* Use Filter: 
+* Use Filter: CHARGE_SNP_Flag_Criteria.flt
 
 
 24) Exclude (zero out) SNPs based on the following criteria (applicable to all cohorts
 in project):
 
-* Use Filter: CHARGE_SNP_Exclusion_Criteria_3.flt
+* Use Filter: CHARGE_SNP_Exclusion_Criteria.flt
 
 
