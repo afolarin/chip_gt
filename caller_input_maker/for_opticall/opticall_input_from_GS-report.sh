@@ -1,5 +1,13 @@
 #!/bin/sh
 
+#########################################################################
+# -- Author: Amos Folarin                                               #
+# -- Organisation: KCL/SLaM                                             #
+# -- Email: amosfolarin@gmail.com                                       #
+#########################################################################
+
+## Take either whole Genome Studio report files or report chunked by
+## chromosome. see opticall_chunker.sh
 
 ## Builds opticall input from a Genome Studio Report file with the format
 ## Name<tab>Chr<tab>Position<tab>Sample1.GType<tab>Sample1.X<tab>Sample1.Y
