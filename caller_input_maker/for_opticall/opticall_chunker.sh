@@ -22,7 +22,7 @@ declare -a chrs=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "1
 for i in ${chrs[@]}
 do
 	#take the header
-	awk -v i=${i} '(NR == 1) {print $0}' ${inFile} > ${outFile}"_Chr_${i}"
+	awk  '(NR == 1) {print $0}' ${inFile} > ${outFile}"_Chr_${i}"
 	#print the whole row where Chr field ($2) == chr i
 	awk -v chromosome=${i} '($2 == chromosome)  {print $0}' ${inFile} >> ${outFile}"_Chr_${i}"
 
