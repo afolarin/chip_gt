@@ -77,6 +77,6 @@ fi
 
 if [ ${SGE_TASK_ID} -eq 26 ]
 then
-${opticall_path}/opticall -meanintfilter -MT  -in  $opti_in -out $opti_out
+${opticall_path}/opticall ${opticall_args} -MT  -in  $opti_in -out $opti_out
 fi
 
