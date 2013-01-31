@@ -6,10 +6,10 @@
 # -- Email: amosfolarin@gmail.com                                       #
 #########################################################################
 
-## Take either whole Genome Studio report files or report chunked by
+## INPUT: Take either whole Genome Studio report files or report chunked by
 ## chromosome. see opticall_chunker.sh
 
-## Builds opticall input from a Genome Studio Report file with the format
+## OUTPUT: Builds opticall input from a Genome Studio Report file with the format
 ## Name<tab>Chr<tab>Position<tab>Sample1.GType<tab>Sample1.X<tab>Sample1.Y
 ## File format output - [SNP] [Coor] [Alleles] [SampleA [intX] [intY]] [SampleN [intX] [intY]]
 
@@ -18,7 +18,7 @@
 
 #PARAMS:
 gsReport=${1}
-outputFile=${1}"_opticall"
+outputFile=${1}"_opticall-in"
 
 # Alleles column is essentially a constant AB, as intX == A and intY == B
 
