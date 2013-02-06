@@ -27,6 +27,7 @@ op_tped=${op_calls}.tped #output tped file
 #------------------------------------------------------------------------
 # Build the TPED file 
 #------------------------------------------------------------------------
-perl -lane 'if($. > 1) {map ($_ =~ s/1/A A/g, @F[4..$#F]); map ($_ =~ s/2/A B/g, @F[4..$#F]); map ($_ =~ s/3/B B/g, @F[4..$#F]); map ($_ =~ s/4/N N/g, @F[4..$#F]); unshift(@F, $chr_n); delete(@F[4]); print( join(" ", "@F"))}' ${op_calls} > ${op_tped}
+perl -slane 'if($. > 1) {map ($_ =~ s/1/A A/g, @F[4..$#F]); map ($_ =~ s/2/A B/g, @F[4..$#F]); map ($_ =~ s/3/B B/g, @F[4..$#F]); map ($_ =~ s/4/N N/g, @F[4..$#F]); unshift(@F, $chr_n); delete(@F[3..4]); print( join(" ", "@F"))}' -- -chr_n=${chr_n}  ${op_calls} > ${op_tped}
+
 
 # NOTE you'll need to cat the files toether if you want a single calls file.
