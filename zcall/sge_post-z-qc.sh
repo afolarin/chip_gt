@@ -1,10 +1,18 @@
 #!/bin/sh
 #$-S /bin/sh
 #$-cwd
+#$ -V
+
+#########################################################################
+# -- Author: Amos Folarin                                               #
+# -- Organisation: KCL/SLaM                                             #
+# -- Email: amosfolarin@gmail.com                                       #
+#########################################################################
+
 
 ######################################################################
 # Post Z-Call Filtering Steps (see protocol sheet step 9-11)
-# USAGE:
+# USAGE: sge_post-z-qc.sh <tpedBasename> 
 # ARGS: 
 #      arg1) tped file basename generated from the zcall step
 ######################################################################
@@ -34,5 +42,8 @@ cat ${bedfile}_01.imiss | awk '$6>=0.10'| sed '1,1d' | awk '{print $1,$2}' > ${b
 cat ${bedfile}_01.lmiss | awk '$5>=0.10'> ${bedfile}_01_poor_snp_callrate;
 cat ${bedfile}_01.lmiss | awk '$5>=0.10'| sed '1,1d' | awk '{print $1,$2}' > ${bedfile}_01_poor_snp_callrate_exclude;
 
+
+# 4 do the exclusions in plink using --exclude and --remove
+# TODO!!!!!
 
 

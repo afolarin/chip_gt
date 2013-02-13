@@ -2,6 +2,7 @@
 #$-S /bin/bash
 #$-cwd
 #$-t 1-26
+#$ -V
 
 #########################################################################
 # -- Author: Amos Folarin                                               #
@@ -10,8 +11,9 @@
 #########################################################################
 
 # This script runs a SGE array job. 1 per 26 chromosomes
-# 1) creates an opticall input file chunked by chromosome
-# 2) runs opticall http://www.sanger.ac.uk/resources/software/opticall/
+# 1) chunks a GenomeStudio report file by chromosome
+# 2) creates an opticall input file from a GenomeStudio report file chunked by chromosome
+# 3) runs opticall http://www.sanger.ac.uk/resources/software/opticall/
 
 # Opticall options can be passed in to this script as the 2nd ARG, 
 # see opticall documentation for more detail.
@@ -27,17 +29,17 @@
 
 
 # ARGS: 
-# #1) basename of the individual chromosomes <GS_reportfile> excluding  "_Chr_XX"
-basename=$1 
-# #2) additional arguements to opticall "see opticall documentation" except the Chromosome options which are already included
-more_args=$2  
+# #1) gs.report: a GenomeStudio report file <GS_reportfile> 
+gs.report=$1 
+# #2) opticall_args: additional arguements to opticall "see opticall documentation" except the Chromosome options which are already included
+opticall_args=$2  
 
 
 ## PATHS:
 ## script paths
-spath="/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/caller_input_maker/for_opticall"
+# spath="/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/caller_input_maker/for_opticall"
 ## opticall appliation 
-opticall_args="/share/apps/opticall_current/bin"
+# opticall_path="/share/apps/opticall_current/bin"
 
 # set working dir for jobs
 cwdir=`pwd`
@@ -45,38 +47,47 @@ cwdir=`pwd`
 # chr array
 declare -a chrs=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "15" "16" "17" "18" "19" "20" "21" "22" "X" "Y" "XY" "MT")
 
-# 1) create opticall inputs from chunked GS report files
-${spath}/opticall_input_from_GS-report.sh ${basename}"_Chr_${chrs[${SGE_TASK_ID}-1]}"
+
+
+#1) chunk the Genome Studio report file by chromosome
+opticall_chunker.sh ${gs.report} ${gs.report}  
 
 
 
-opti_in=${basename}"_Chr_${chrs[${SGE_TASK_ID}-1]}_opticall-in"
-opti_out=${basename}"_Chr_${chrs[${SGE_TASK_ID}-1]}_opticall-out"
+# 2) create opticall inputs from chunked GS report files
+opticall_input_from_GS-report.sh ${gs.report}"_Chr_${chrs[${SGE_TASK_ID}-1]}"
 
-# 2) run opticall on the chromosome for the given sge_task_id
+
+
+opti_in=${gs.report}"_Chr_${chrs[${SGE_TASK_ID}-1]}_opticall-in"
+opti_out=${gs.report}"_Chr_${chrs[${SGE_TASK_ID}-1]}_opticall-out"
+
+# 3) run opticall on the chromosome for the given sge_task_id
+# Autosomal chromosomes
 if [ ${SGE_TASK_ID} -le 22 ]
 then
-${opticall_path}/opticall ${opticall_args}  -in $opti_in -out $opti_out
+opticall ${opticall_args}  -in $opti_in -out $opti_out
 fi
 
+# Other chromosomes 
 if [ ${SGE_TASK_ID} -eq 23 ]
 then
-${opticall_path}/opticall ${opticall_args} -X -in  $opti_in -out $opti_out
+opticall ${opticall_args} -X -in  $opti_in -out $opti_out
 fi
 
 if [ ${SGE_TASK_ID} -eq 24 ]
 then
-${opticall_path}/opticall  ${opticall_args} -Y  -in  $opti_in -out $opti_out
+opticall  ${opticall_args} -Y  -in  $opti_in -out $opti_out
 fi
 
 if [ ${SGE_TASK_ID} -eq 25 ]
 then
-${opticall_path}/opticall ${opticall_args} -XY -in  $opti_in -out $opti_out
+opticall ${opticall_args} -XY -in  $opti_in -out $opti_out
 fi
 
 
 if [ ${SGE_TASK_ID} -eq 26 ]
 then
-${opticall_path}/opticall ${opticall_args} -MT  -in  $opti_in -out $opti_out
+opticall ${opticall_args} -MT  -in  $opti_in -out $opti_out
 fi
 

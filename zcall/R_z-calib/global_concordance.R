@@ -1,3 +1,10 @@
+#########################################################################
+# -- Author: Amos Folarin                                               #
+# -- Organisation: KCL/SLaM                                             #
+# -- Email: amosfolarin@gmail.com                                       #
+#########################################################################
+
+
 #RScript to plot out the Global Concordance from the ZCall Calibration statistics files
 # USAGE: from R_z-calib dir, run:
 #        Rscript globalconcordance.R

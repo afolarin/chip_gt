@@ -1,12 +1,13 @@
 #!/bin/sh
 #$ -S /bin/sh
-#$ -N exome.qc.pipeline.v01.sh
+#$ -N exome.qc.pipeline.v03.sh
 #$ -l h_vmem=10G
 #$ -q long.q,short.q
 #$ -p -0.99
 #$ -pe multi_thread 1
 #$ -j yes
 #$ -cwd
+#$ -V
 ############################
 
 pedfile=${1}

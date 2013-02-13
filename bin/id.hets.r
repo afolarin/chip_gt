@@ -1,0 +1,1 @@
+../exome_chip_QC/id.hets.r
