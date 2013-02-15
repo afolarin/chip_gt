@@ -11,6 +11,11 @@
 # OUTPUT: 1) pdf file plot of global concordance vs z range(3-15)
 #         2) file optimal.thresh a file listing the optimal threshold 
 
+# ARGS:
+args <- commandArgs(TRUE)
+setwd(arg[1])
+
+
 stat.f <- dir(path="../calibrateZ_out/", pattern=".*stats")
 
 zscore <- c()
@@ -42,9 +47,12 @@ best.thresh.file <- stat.f[which.max(global.conc)]
 len.s <- nchar(best.thresh.file)
 best.thresh.file <- substr(best.thresh.file, 1, len.s -6)
 #echo stat file which resulted in optimal concordance to stdout
-print("**************************************************************************************")
-print("The following file has the optimal concordance, use the Z value given in the filename:")
-print(best.thresh.file)
-print("**************************************************************************************")
+#print("**************************************************************************************")
+#print("The following file has the optimal concordance, use the Z value given in the filename:")
+#print(best.thresh.file)
+#print("**************************************************************************************")
 
 write.table(file="optimal.thresh", x=best.thresh.file)
+
+#return to s/o name of best threshold file
+print(best.thresh.file)

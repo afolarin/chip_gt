@@ -25,6 +25,7 @@ export basename="gendep_11-002-2013_01"  # leave off suffix ".report" for basena
 
 
 #------------------------------------------------------------------------
+# INITIAL QC
 echo "Make a local copy of the report file"
 # input: data location for gs.report
 # output: working dir copy of gs.report
@@ -33,6 +34,7 @@ cp ${gs.report_path}/${basename}.report ${working_dir}/${basename}.report
 
 
 #------------------------------------------------------------------------
+# INITIAL QC
 echo "Convert GS to plink for QC input, output tped/tfam to working_dir"
 # input: local gs.report
 # output: local .tped & tfam files and ped & map files
@@ -42,6 +44,7 @@ convertReportToTPED.py -O ${working_dir}/${basename} -R ${working_dir}/${basenam
 plink --noweb --tfile ${working_dir}/${basename} --make-ped --out ${working_dir}/${basename};
 
 #------------------------------------------------------------------------
+# INITIAL QC
 echo "Post-GenomeStudio Sample QC, output list of samples to drop "
 # input: .ped file derived from the report
 # output: output list of samples to drop: final_sample_exclude
@@ -52,6 +55,7 @@ qsub -q short.q exome.qc.pipeline.v03.sh ${working_dir}/${basename} ${working_di
 
 
 #------------------------------------------------------------------------
+# INITIAL QC
 echo "Drop bad samples from gs.report (local)"
 # input: report file and samples to exclude
 # output: report file ${basename}_filt.report cleaned of bad samples
@@ -70,9 +74,7 @@ echo "4) Create a tped from each chr chunk (later to be concatenated)"
 # input: cleaned gs.report file
 # output: 
 #------------------------------------------------------------------------
-qstat -q short.q sge_run_opticall.sh  -meanintfilter
-
-
+qstat -q short.q sge_run_opticall.sh ${working_dir}/${basename}_filt.report -meanintfilter
 
 
 
@@ -80,6 +82,7 @@ qstat -q short.q sge_run_opticall.sh  -meanintfilter
 #------------------------------------------------------------------------
 # OPTICALL BRANCH: 
 # create a tped from each chr chunk (later to be concatenated)
+# plink update-alleles 
 # input:
 # output: 
 #------------------------------------------------------------------------
@@ -87,53 +90,19 @@ qstat -q short.q sge_run_opticall.sh  -meanintfilter
 #TODO
 
 
-
-
-
 #------------------------------------------------------------------------
-# ZCALL BRANCH: 
-#
+# OPTICALL BRANCH: 
+# POST CALLING STEPS: 
+echo "Update Alleles for Opticall tped"
+echo ""
+# plink update-alleles 
 # input:
 # output: 
 #------------------------------------------------------------------------
+qsub -q <queue.q> sge_update-alleles.sh <tpedBasename> /home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/PLINK_update-alleles_map/HumanExome.A.update_alleles.txt
 
 
 
-#------------------------------------------------------------------------
-
-# input:
-# output: 
-#------------------------------------------------------------------------
-
-
-
-
-#------------------------------------------------------------------------
-#ZCALL BRANCH: 
-#
-# input:
-# output: 
-#------------------------------------------------------------------------
-
-
-
-
-#------------------------------------------------------------------------
-# ZCALL BRANCH: 
-#
-# input:
-# output: 
-#------------------------------------------------------------------------
-
-
-
-
-#------------------------------------------------------------------------
-# ZCALL BRANCH: 
-#
-# input:
-# output: 
-#------------------------------------------------------------------------
 
 
 
@@ -141,7 +110,68 @@ qstat -q short.q sge_run_opticall.sh  -meanintfilter
 
 #------------------------------------------------------------------------
 # ZCALL BRANCH: 
-#
+echo "Calibrate Z, find Z which has the best concordance with Gencall"
+echo "The R script global.concordance.R will calculate the optimal z"
+# input:
+# output: 
+#------------------------------------------------------------------------
+qsub -q short.q sge_calcThresholds
+optimal_threshold_file=`Rscript global.concordance.R ${working_dir}`
+
+
+#------------------------------------------------------------------------
+# ZCALL BRANCH: 
+echo "Run Z call, with the calibrated threshold file"
+echo ""
+
+# input:
+# output: 
+#------------------------------------------------------------------------
+
+#run with precalculated threshold file
+qsub -q short.q  sge_zcall.sh ${basename} ${optimal_threshold_file=}
+
+# or run and calculate threshold from provided Z and I
+# qsub -q <queue.q>  sge_zcall.sh <basename> <Z> <I>
+
+
+#------------------------------------------------------------------------
+# ZCALL BRANCH: 
+echo "Post zcall filtering, just a sanity check??? see Jackie Goldstein and Sanger Exome chip group protocols"
+echo ""
+
+# input:
+# output: 
+#------------------------------------------------------------------------
+ sge_post-z-qc.sh <tpedBasename>
+
+
+
+#------------------------------------------------------------------------
+# ZCALL BRANCH: 
+# POST CALLING STEPS: 
+echo "Update Alleles for Zcall tped"
+echo ""
+# plink update-alleles 
+# input:
+# output: 
+#------------------------------------------------------------------------
+qsub -q <queue.q> sge_update-alleles.sh <tpedBasename> /home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/PLINK_update-alleles_map/HumanExome.A.update_alleles.txt
+
+
+
+#------------------------------------------------------------------------
+echo ""
+echo ""
+# input:
+# output: 
+#------------------------------------------------------------------------
+
+
+
+
+
+#------------------------------------------------------------------------
 # input:
 # output: 
 #------------------------------------------------------------------------
@@ -149,7 +179,6 @@ qstat -q short.q sge_run_opticall.sh  -meanintfilter
 
 
 #------------------------------------------------------------------------
-# ZCALL BRANCH: 
 #
 # input:
 # output: 

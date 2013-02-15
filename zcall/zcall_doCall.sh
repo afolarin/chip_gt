@@ -99,10 +99,10 @@ then
 	
 	
 	#5) plot and calc optimal calibration
-	pushd .
-	cd ../R_z-calib
-	Rscript global_concordance.R
-	popd
+	#pushd .
+	#cd ../R_z-calib
+	#Rscript global_concordance.R
+	#popd
 	
 	echo "Finished: "`date`
 fi
