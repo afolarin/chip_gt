@@ -1,5 +1,5 @@
 #!/bin/sh
-#$-S /bin/sh
+#$-S /bin/bash
 #$-cwd
 #$-t 3-15
 #$ -V
@@ -15,10 +15,10 @@
 #USAGE: qsub -q <queue.q> sge_calcThresholds.sh <data_path> <basename> <min-intensity>
 
 # args
-data_path=${1}
+#data_path=${1}
 basename=${2}
 I=${3}
 
 #call zcall_doCall.sh for the thresholds
-/bin/bash zcall_doCall.sh ${data_path} ${basename} $SGE_TASK_ID ${I}
+/bin/bash zcall_doCall.sh ${basename} $SGE_TASK_ID ${I}
 

@@ -8,14 +8,17 @@
 
 #------------------------------------------------------------------------
 # USAGE: opticall_to_tped.sh <chunked_opticall_file> <chr number>
-# e.g. opticall_to_tped.sh opticallmoorfields_191112_zCall_01_filt_faster-version.report_Chr_10 10
+# e.g. opticall_to_tped.sh gendep_11-002-2013_01_filt.report_Chr_Y_opticall-out.calls 
 #------------------------------------------------------------------------
 
 #------------------------------------------------------------------------
+# ARGS:
 # Input File <Opticall Calls File> chunked by chromosome!
 #------------------------------------------------------------------------
-op_calls=$1  ##opticall calls file chunked by chromosome
-chr_n=$2  ##chromosome number
+op_calls=${1}  ##opticall calls file chunked by chromosome
+
+# other vars
+chr_n=`echo ${op_calls} | perl -ne '$_ =~ m/.+_Chr_(.{1,2})_opticall-out.calls$/ ; print $1;'`   ##extract chromosome number
 op_tped=${op_calls}.tped #output tped file
 
 ## pseudo code
@@ -27,7 +30,9 @@ op_tped=${op_calls}.tped #output tped file
 #------------------------------------------------------------------------
 # Build the TPED file 
 #------------------------------------------------------------------------
-perl -slane 'if($. > 1) {map ($_ =~ s/1/A A/g, @F[4..$#F]); map ($_ =~ s/2/A B/g, @F[4..$#F]); map ($_ =~ s/3/B B/g, @F[4..$#F]); map ($_ =~ s/4/N N/g, @F[4..$#F]); unshift(@F, $chr_n); delete(@F[3..4]); print( join(" ", "@F"))}' -- -chr_n=${chr_n}  ${op_calls} > ${op_tped}
+
+#perl -slane 'if($. > 1) {map ($_ =~ s/1/A A/g, @F[4..$#F]); map ($_ =~ s/2/A B/g, @F[4..$#F]); map ($_ =~ s/3/B B/g, @F[4..$#F]); map ($_ =~ s/4/N N/g, @F[4..$#F]); unshift(@F, $chr_n); delete(@F[3..4]); print( join(" ", "@F"))}' -- -chr_n=${chr_n}  ${op_calls} > ${op_tped}
 
 
-# NOTE you'll need to cat the files toether if you want a single calls file.
+perl -slane 'if($. > 1) {map ($_ =~ s/1/A A/g, @F[4..$#F]); map ($_ =~ s/2/A B/g, @F[4..$#F]); map ($_ =~ s/3/B B/g, @F[4..$#F]); map ($_ =~ s/4/N N/g, @F[4..$#F]); splice(@F, 1,0,0); unshift(@F, $chr_n); splice(@F, 4, 2); print( join(" ", "@F"))}' -- -chr_n=${chr_n}  ${op_calls} > ${op_tped}
+

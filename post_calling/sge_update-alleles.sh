@@ -1,3 +1,9 @@
+#!/bin/sh
+#$-S /bin/bash
+#$-cwd
+#$-V
+
+
 #########################################################################
 # -- Author: Amos Folarin                                               #
 # -- Organisation: KCL/SLaM                                             #
@@ -18,14 +24,15 @@
 
 
 # ARGS:
-tped=""
-update_alleles_file=""
+tped=${1}
+update_alleles_file=${2}
 
 
 #------------------------------------------------------------------------
 # call plink to perform update alleles 
 #------------------------------------------------------------------------
 plink --noweb --tfile ${tped} --update-alleles ${update_alleles_file} --make-bed --out ${tped}_UA
+#plink --noweb --tped ${tped} --update-alleles ${update_alleles_file} --make-bed --out ${tped}_UA
 
 
 #------------------------------------------------------------------------

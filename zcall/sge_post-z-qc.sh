@@ -1,5 +1,5 @@
 #!/bin/sh
-#$-S /bin/sh
+#$-S /bin/bash
 #$-cwd
 #$ -V
 

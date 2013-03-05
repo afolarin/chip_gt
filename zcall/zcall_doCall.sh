@@ -21,7 +21,7 @@
 # If you have already run z calibration, then you can run zcall with a given threshold file, which will be faster
 # USAGE1: zcall_doCall.sh basename thresholdfile
 
-# If you want to skip calibration or and generate a the threshold file from scratch then provide Z and I values (omitting the threshold file)
+# If you want to run calibration or and generate a the threshold file from scratch then provide Z and I values (omitting the threshold file)
 # USAGE2: zcall_doCall.sh basename 7 0.2
 
 # calibrateZ script also calls this as part of scanning a range of z for optimal values
