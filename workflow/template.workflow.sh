@@ -120,7 +120,6 @@ echo ""
 # output: tped file with updated alleles
 #------------------------------------------------------------------------
 qsub -q short.q -N update-alleles -hold_jid optcall2plink ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_opticall-cat /home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/PLINK_update-alleles_map/HumanExome.A.update_alleles.txt
-#WON'T WORK WITHOUT TFAM FILE 
 
 
 

@@ -26,12 +26,19 @@
 
 #------------------------------------------------------------------------
 # ARGS: 
-# op_calls: a opticall calls file
+# basename: filename root for a genome studio report file
 #------------------------------------------------------------------------
-op_calls=${1} 
+basename=${1} 
+
+#calls file
+op_calls=${basename}_opticall-cat.calls
 
 #output file
-tfam_file=${op_calls}.tfam #output tfam file
+tfam_file="${basename}_opticall-cat.tfam" #output tfam file 
+> ${tfam_file} #create empty file, and clobber 
+
+
+
 
 
 

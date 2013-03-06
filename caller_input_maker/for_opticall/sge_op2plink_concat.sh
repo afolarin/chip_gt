@@ -30,12 +30,6 @@ basename=${1}   #the GenomeStudio report's basename
 ped_file="${basename}_opticall-cat.tped"
 > ${ped_file}  #create empty file, and clobber
 
-tfam_file="${basename}_opticall-cat.tfam"
-> ${tfam_file} #create empty file, and clobber 
-
-
-
-
 
 # Iterate through each chromosome chunk file,  
 for i in `seq 1 26`;
@@ -88,7 +82,7 @@ do
 done
 
 # Now create the tfam file for ${ped_file}  
-bash opticall_to_tfam.sh ${basename}_opticall-cat.calls  # note as using the concatenated .calls file for source of sample ids this file needs to exist, the same info is in all the .calls headers though
+bash opticall_to_tfam.sh ${basename} # note as using the concatenated .calls file for source of sample ids this file needs to exist, the same info is in all the .calls headers though
 
 
 

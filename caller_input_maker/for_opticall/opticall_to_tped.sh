@@ -34,5 +34,5 @@ op_tped=${op_calls}.tped #output tped file
 #perl -slane 'if($. > 1) {map ($_ =~ s/1/A A/g, @F[4..$#F]); map ($_ =~ s/2/A B/g, @F[4..$#F]); map ($_ =~ s/3/B B/g, @F[4..$#F]); map ($_ =~ s/4/N N/g, @F[4..$#F]); unshift(@F, $chr_n); delete(@F[3..4]); print( join(" ", "@F"))}' -- -chr_n=${chr_n}  ${op_calls} > ${op_tped}
 
 
-perl -slane 'if($. > 1) {map ($_ =~ s/1/A A/g, @F[4..$#F]); map ($_ =~ s/2/A B/g, @F[4..$#F]); map ($_ =~ s/3/B B/g, @F[4..$#F]); map ($_ =~ s/4/N N/g, @F[4..$#F]); splice(@F, 1,0,0); unshift(@F, $chr_n); splice(@F, 4, 2); print( join(" ", "@F"))}' -- -chr_n=${chr_n}  ${op_calls} > ${op_tped}
+perl -slane 'if($. > 1) {map ($_ =~ s/1/A A/g, @F[4..$#F]); map ($_ =~ s/2/A B/g, @F[4..$#F]); map ($_ =~ s/3/B B/g, @F[4..$#F]); map ($_ =~ s/4/0 0/g, @F[4..$#F]); splice(@F, 1,0,0); unshift(@F, $chr_n); splice(@F, 4, 2); print( join(" ", "@F"))}' -- -chr_n=${chr_n}  ${op_calls} > ${op_tped}
 
