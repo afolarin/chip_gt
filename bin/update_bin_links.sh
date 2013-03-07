@@ -12,10 +12,11 @@
 
 #USAGE:
 # run from the bin directory
-# update_bin_links.sh </myroot/path>  
+# bash update_bin_links.sh </myroot/path>  
+
 
 #ARGS:
-root_dir=$1  # root dir to start the find from
+root_dir=$1  # root dir to start searching with the find command
 
 #------------------------------------------------------------------------
 # aggregate links to a bin directory

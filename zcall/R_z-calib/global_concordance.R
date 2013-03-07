@@ -13,17 +13,19 @@
 
 # ARGS:
 args <- commandArgs(TRUE)
-setwd(arg[1])
+setwd(args[1])
 
 
-stat.f <- dir(path="../calibrateZ_out/", pattern=".*stats")
+#stat.f <- dir(path="../calibrateZ_out/", pattern=".*stats")
+stat.f <- dir(path="./", pattern=".*stats")
 
 zscore <- c()
 global.conc <- c() 
 
 for (f in stat.f)
 {
-        tmp <- readLines(paste("../calibrateZ_out/", f, sep=""))
+        #tmp <- readLines(paste("../calibrateZ_out/", f, sep=""))
+        tmp <- readLines(paste("./", f, sep=""))
         conc <- as.numeric(substr( tmp[4], 21, nchar(tmp[4])))
         global.conc <- append(global.conc, conc)
         z.ind <- regexpr(pattern="z=(\\d)+", f)

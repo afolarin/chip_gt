@@ -16,9 +16,13 @@
 
 # args
 #data_path=${1}
-basename=${2}
-I=${3}
+basename=${1}
+I=${2}
+
+
 
 #call zcall_doCall.sh for the thresholds
-/bin/bash zcall_doCall.sh ${basename} $SGE_TASK_ID ${I}
+/bin/bash calc_thresholds.sh ${basename} ${SGE_TASK_ID} ${I} 
+
+
 

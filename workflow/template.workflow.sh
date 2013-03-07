@@ -135,8 +135,8 @@ echo "The R script global.concordance.R will calculate the optimal z"
 # input:
 # output: 
 #------------------------------------------------------------------------
-qsub -q short.q sge_calcThresholds ${working_dir}/${basename} 0.2
-optimal_threshold_file=`Rscript global.concordance.R ${working_dir}`
+qsub -q short.q -N calcThresh -hold_jid drop-bad-samples ${exome_chip_bin}/sge_calcThresholds.sh ${working_dir}/${basename} 0.2
+qsub -q short.q -N gConcordance -hold_jid calcThresh ${exome_chip_bin}/sge_global_concordance.sh ${working_dir}
 
 
 #------------------------------------------------------------------------
@@ -149,7 +149,7 @@ echo ""
 #------------------------------------------------------------------------
 
 #run with precalculated threshold file
-qsub -q short.q  sge_zcall.sh ${basename} ${optimal_threshold_file=}
+qsub -q short.q -N zcalling -hold_jid gConcordance sge_zcall.sh ${basename} ${optimal_threshold_file}
 
 # or run and calculate threshold from provided Z and I
 # qsub -q <queue.q>  sge_zcall.sh <basename> <Z> <I>
