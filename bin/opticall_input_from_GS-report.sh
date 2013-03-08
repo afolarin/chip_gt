@@ -1,1 +1,1 @@
-../caller_input_maker/for_opticall/opticall_input_from_GS-report.sh
+../opticall/opticall_parsers/opticall_input_from_GS-report.sh

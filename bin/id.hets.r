@@ -1,1 +1,1 @@
-../exome_chip_QC/id.hets.r
+../protocols/exome_chip_QC/id.hets.r

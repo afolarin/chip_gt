@@ -1,1 +1,1 @@
-../caller_input_maker/for_opticall/sge_op2plink_concat.sh
+../opticall/opticall_parsers/sge_op2plink_concat.sh

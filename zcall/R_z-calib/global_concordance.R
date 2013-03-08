@@ -54,7 +54,7 @@ best.thresh.file <- substr(best.thresh.file, 1, len.s -6)
 #print(best.thresh.file)
 #print("**************************************************************************************")
 
-write.table(file="optimal.thresh", x=best.thresh.file)
+write.table(file="optimal.thresh", x=best.thresh.file,row.names=F,col.names=F,quote=F)
 
 #return to s/o name of best threshold file
 print(best.thresh.file)

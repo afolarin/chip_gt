@@ -1,1 +1,1 @@
-../exome_chip_QC/EIGENSOFTplus_v12.r
+../protocols/exome_chip_QC/EIGENSOFTplus_v12.r

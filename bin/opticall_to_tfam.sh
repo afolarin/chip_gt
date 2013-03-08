@@ -1,1 +1,1 @@
-../caller_input_maker/for_opticall/opticall_to_tfam.sh
+../opticall/opticall_parsers/opticall_to_tfam.sh

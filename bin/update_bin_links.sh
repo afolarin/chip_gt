@@ -22,6 +22,10 @@ root_dir=$1  # root dir to start searching with the find command
 # aggregate links to a bin directory
 # add one find for each type of file required in the bin
 #------------------------------------------------------------------------
-find ${root_dir} -type f -name "*.sh" -exec ln -s {} \;
-find ${root_dir} -type f -name "*.[rR]" -exec ln -s {} \;
-find ${root_dir} -type f -name "*.R" -exec ln -s {} \;
+
+for g in {*.sh,*.SH,*.[rR]} 
+do
+	echo "creating links here to found ${g} files"
+	find ${root_dir} -type f -name ${g} -exec ln -sf {} \;
+
+done

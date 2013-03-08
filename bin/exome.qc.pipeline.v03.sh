@@ -1,1 +1,1 @@
-../exome_chip_QC/exome.qc.pipeline.v03.sh
+../protocols/exome_chip_QC/exome.qc.pipeline.v03.sh

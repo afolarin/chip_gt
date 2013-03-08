@@ -119,9 +119,12 @@ echo ""
 # input: basename of concatenated opticall tped
 # output: tped file with updated alleles
 #------------------------------------------------------------------------
-qsub -q short.q -N update-alleles -hold_jid optcall2plink ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_opticall-cat /home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/PLINK_update-alleles_map/HumanExome.A.update_alleles.txt
+qsub -q short.q -N update-alleles_oc -hold_jid optcall2plink ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_opticall-cat /home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/PLINK_update-alleles_map/HumanExome.A.update_alleles.txt
 
+# convert bed to ped
+# e.g. plink --noweb --bfile gendep_11-002-2013_01_opticall-cat_UA --recode --out gendep_11-002-2013_01_opticall-cat_UA
 
+############## END OF OPTICALL######################
 
 
 
@@ -132,8 +135,8 @@ qsub -q short.q -N update-alleles -hold_jid optcall2plink ${exome_chip_bin}/sge_
 # ZCALL BRANCH: 
 echo "Calibrate Z, find Z which has the best concordance with Gencall"
 echo "The R script global.concordance.R will calculate the optimal z"
-# input:
-# output: 
+# input: working directory, minimum intensity (default value 0.2)
+# output: zcall threshold files, stats files
 #------------------------------------------------------------------------
 qsub -q short.q -N calcThresh -hold_jid drop-bad-samples ${exome_chip_bin}/sge_calcThresholds.sh ${working_dir}/${basename} 0.2
 qsub -q short.q -N gConcordance -hold_jid calcThresh ${exome_chip_bin}/sge_global_concordance.sh ${working_dir}
@@ -144,28 +147,38 @@ qsub -q short.q -N gConcordance -hold_jid calcThresh ${exome_chip_bin}/sge_globa
 echo "Run Z call, with the calibrated threshold file"
 echo ""
 
-# input:
-# output: 
+# input: basename and optimal threshold file, this is listed in the "optimal.thresh" file after running global concordance
+# output: zcalls in tped/tfam Plink format
 #------------------------------------------------------------------------
-
 #run with precalculated threshold file
-qsub -q short.q -N zcalling -hold_jid gConcordance sge_zcall.sh ${basename} ${optimal_threshold_file}
-
-# or run and calculate threshold from provided Z and I
-# qsub -q <queue.q>  sge_zcall.sh <basename> <Z> <I>
-
+qsub -q short.q -N zcalling -hold_jid gConcordance ${exome_chip_bin}/sge_zcall.sh ${basename} ${working_dir}/optimal.thresh
 
 #------------------------------------------------------------------------
 # ZCALL BRANCH: 
-echo "Post zcall filtering, just a sanity check??? see Jackie Goldstein and Sanger Exome chip group protocols"
+# POST CALLING STEPS: 
+echo "Update Alleles for ZCall tped"
 echo ""
+# plink update-alleles 
+# input: basename of zcall tped
+# output: tped file with updated alleles
+#------------------------------------------------------------------------
+qsub -q short.q -N update-alleles_zc -hold_jid zcalling ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_Zcalls /home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/PLINK_update-alleles_map/HumanExome.A.update_alleles.txt
+
+#convert .bed to ped 
+# e.g. plink --noweb --bfile gendep_11-002-2013_01_Zcalls_UA --recode --out gendep_11-002-2013_01_Zcalls_UA
+
+#------------------------------------------------------------------------
+# ZCALL BRANCH: 
+# TODO
+#echo "Post zcall filtering, just a sanity check??? see Jackie Goldstein and Sanger Exome chip group protocols"
+#echo ""
 
 # input:
 # output: 
 #------------------------------------------------------------------------
- sge_post-z-qc.sh <tpedBasename>
+# sge_post-z-qc.sh <tpedBasename>
 
-
+################ END OF ZCALL###########################
 
 
 

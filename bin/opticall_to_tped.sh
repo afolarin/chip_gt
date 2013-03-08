@@ -1,1 +1,1 @@
-../caller_input_maker/for_opticall/opticall_to_tped.sh
+../opticall/opticall_parsers/opticall_to_tped.sh
