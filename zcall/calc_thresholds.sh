@@ -42,8 +42,8 @@ echo "+**************************************************+"
 echo "Started: "`date`
 
 
-if ! [ -e ${thresholdfile} ]
-then
+#if ! [ -e ${thresholdfile} ]
+#then
 #***Scenario 1***: calculate the threshold file at the given value of Z and I
 
         #now add calibration info to basename
@@ -82,4 +82,4 @@ then
         #rm $basename_c".betas.txt" 
 
         echo "Finished: "`date`
-fi
+#fi

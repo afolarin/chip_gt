@@ -1,1 +1,0 @@
-../opticall/opticall_parsers/opticall_chunker.sh

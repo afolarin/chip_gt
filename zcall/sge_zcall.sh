@@ -25,10 +25,11 @@
 
 
 #args
-basename=${1}
-tfile=${2}
+wkdir=${1}
+basename=${2}
+tfile=${3}
 
 
 #run job with optimal threshold file
-/bin/bash call_zcalls.sh -B ${basename} -O ${tfile}
+/bin/bash call_zcalls.sh -W ${wkdir} -B ${basename} -C ${tfile}
 

@@ -1,3 +1,8 @@
+#!/bin/sh
+#$-S /bin/bash
+#$-cwd
+#$-V
+
 #########################################################################
 # -- Author: Amos Folarin                                               #
 # -- Organisation: KCL/SLaM                                             #

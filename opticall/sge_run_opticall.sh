@@ -46,7 +46,7 @@ opticall_args=${2}
 declare -a chrs=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "15" "16" "17" "18" "19" "20" "21" "22" "X" "Y" "XY" "MT")
 
 #1) chunk the Genome Studio report file by chromosome
-opticall_chunker.sh ${gs_report} ${gs_report}  
+#MOVED as not parallel step# opticall_chunker.sh ${gs_report} ${gs_report}  
 
 # 2) create opticall inputs from chunked GS report files
 opticall_input_from_GS-report.sh ${gs_report}"_Chr_${chrs[${SGE_TASK_ID}-1]}"
