@@ -12,7 +12,7 @@
 
 #DESC:
 # This carries a few post Opticall tasks out, primarily for getting Plink input 
-# 1) Make tped files from opticall chunked .calls files and concatenate them into a single .tped
+# 1) Make tped files from opticall chunked .calls files and then concatenate them into a single .tped
 # 2) Make the corresponding .tfam file for the concatenated .tped, needed to perform update alleles in Plink.
 
 #USAGE:
@@ -27,7 +27,7 @@ basename=${1}   #the GenomeStudio report's basename
 # 1. all the chunked calls from opticall
 #------------------------------------------------------------------------
 
-ped_file="${basename}_opticall-cat.tped"
+ped_file="${basename}_filt_Opticall.tped" #"${basename}_opticall-cat.tped"
 > ${ped_file}  #create empty file, and clobber
 
 

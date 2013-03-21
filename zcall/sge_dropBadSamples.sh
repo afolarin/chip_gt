@@ -28,8 +28,8 @@ basename=${1}
 dropList=${2}
 
 #duplicate the report file in the cwd (a safty feature, keep local original uncleaned file)
-cp ${basename}.report ${basename}_dup.report
+#cp ${basename}.report ${basename}_dup.report
 
 # call dropSamplesFromReport.py
-dropSamplesFromReport_FasterVersion.py ${basename}_dup.report ${dropList} > ${basename}_filt.report
+dropSamplesFromReport_FasterVersion.py ${basename}.report ${dropList} > ${basename}_filt.report
 

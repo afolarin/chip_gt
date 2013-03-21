@@ -26,7 +26,7 @@ basename=${1} #genome studio report file basename
 #------------------------------------------------------------------------
 
 #final file to hold all the concatenated .calls chunks
-concat_calls="${basename}_opticall-cat.calls"
+concat_calls="${basename}_filt_opticall-cat.calls"
 #a temporary file for chunks cache
 tmp_chunk="opticall_collate_chunk.tmp"
 
@@ -44,7 +44,7 @@ do
 	        then
                 	cat ${basename}_filt.report_Chr_1_opticall-out.calls > ${concat_calls}
        		else
-                	cp ${basename}_filt.report_Chr_${i}_opticall-out.calls ${tmp_chunk}   ## TODO won't work for X, Y, MT chrs -- see chunking for solution
+                	cp ${basename}_filt.report_Chr_${i}_opticall-out.calls ${tmp_chunk}   
                 	sed -i -e '1d' ${tmp_chunk} #strip header after first chunk
                 	cat ${tmp_chunk} >> ${concat_calls}
         	fi

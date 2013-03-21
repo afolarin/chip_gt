@@ -1,0 +1,1 @@
+../protocols/exome_chip_QC/sge_GSreport2ped.sh

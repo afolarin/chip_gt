@@ -30,11 +30,11 @@
 #------------------------------------------------------------------------
 basename=${1} 
 
-#calls file
-op_calls=${basename}_opticall-cat.calls
+#concatenated calls file
+op_calls=${basename}_filt_opticall-cat.calls
 
 #output file
-tfam_file="${basename}_opticall-cat.tfam" #output tfam file 
+tfam_file="${basename}_filt_Opticall.tfam" #"${basename}_opticall-cat.tfam" #output tfam file 
 > ${tfam_file} #create empty file, and clobber 
 
 

@@ -6,6 +6,36 @@
 # -- Email: amosfolarin@gmail.com                                       #
 #########################################################################
 
+# DESC:
+# Genotype calling for Exome Chip.
+# This is the template script for running the exome chip pipeline this will run 
+# from the input of a Genome Studio report file (zcall format, see docs)
+# 1) Run QC on the report file
+# 2) Run Opticall -- output:  <name>_filt_Opticall.bed
+# 2) Run Zcall -- output:  <name>_filt_Zcall.bed
+# 3) Compare results of the two rare genotype callers  
+
+
+# USAGE:
+##### require enviromnental variables populated correctly
+
+# 1) exome_chip_bin = path to the pipeline bin with the scripts bin (....pipelines/exome_chip/bin/)
+# available on 
+
+# 2) zcall_bin = path to the zcall bin
+
+# 3) working_dir= path to working dir, use pwd when run from the working dir (typical usage)
+
+##### for each dataset run through the pipeline define these paths
+# 4) data_path = path to folder containing the genome studio report file 
+# 5) basename = the genome studio report file (in Zcall format)
+
+##### execute the pipeline:
+# bash template.workflow.sh
+
+
+ 
+
 
 
 #------------------------------------------------------------------------
@@ -25,7 +55,7 @@ export data_path="/home/afolarinbrc/pipelines/DATA/exome_chip/GENDEP_test"
 export basename="gendep_11-002-2013_01"  # leave off suffix ".report" for basename
 
 
-
+######################### START INITIAL QC ##############################
 #------------------------------------------------------------------------
 # INITIAL QC
 echo "Make a local copy of the report file"
@@ -37,14 +67,16 @@ cp ${data_path}/${basename}.report ${working_dir}/${basename}.report
 
 #------------------------------------------------------------------------
 # INITIAL QC
-echo "Convert GS to plink for QC input, output tped/tfam to working_dir, required input for QC script"
+echo "Convert GenomeStudio report file to Plink (ped) for QC input, output tped/tfam to working_dir"
 # input: local gs.report
 # output: local .tped & tfam files and ped & map files
 # //TODO wrap this in a sge job.. 
 #------------------------------------------------------------------------
-convertReportToTPED.py -O ${working_dir}/${basename} -R ${working_dir}/${basename}.report
-plink --noweb --tfile ${working_dir}/${basename} --make-bed --out ${working_dir}/${basename};
-plink --noweb --bfile ${working_dir}/${basename} --recode --out ${working_dir}/${basename};
+qsub -q short.q -N report2ped  ${exome_chip_bin}/sge_GSreport2ped.sh ${working_dir}/${basename}
+
+#convertReportToTPED.py -O ${working_dir}/${basename} -R ${working_dir}/${basename}.report
+#plink --noweb --tfile ${working_dir}/${basename} --make-bed --out ${working_dir}/${basename}; #converting .tped --> .ped requires intermediate .bed file 
+#plink --noweb --bfile ${working_dir}/${basename} --recode --out ${working_dir}/${basename};
 
 #NOTE: becasue you have made the bed file here, this step is duplicated in exome.qc.pipeline.v03.sh remove there /TODO
 
@@ -56,23 +88,24 @@ echo "Post-GenomeStudio Sample QC, output list of samples to drop "
 # output: output list of samples to drop: final_sample_exclude
 # *****//TODO still some outstanding QC steps to implement*****
 #------------------------------------------------------------------------
-qsub -q short.q -N initial-QC ${exome_chip_bin}/exome.qc.pipeline.v03.sh ${working_dir}/${basename} ${working_dir}/${basename}
+qsub -q short.q -N initial-QC hold_jid report2ped ${exome_chip_bin}/exome.qc.pipeline.v03.sh ${working_dir}/${basename} ${working_dir}/${basename}
 
 
 #------------------------------------------------------------------------
 # INITIAL QC
 echo "Drop bad samples from gs.report (local)"
+echo "ALL subsequent work carried out on the ${basename}_filt.report, which is the QC'd file"
 # input: report file and samples to exclude
 # output: report file ${basename}_filt.report cleaned of bad samples
 #------------------------------------------------------------------------
 qsub -q short.q -N drop-bad-samples  -hold_jid initial-QC ${exome_chip_bin}/sge_dropBadSamples.sh ${working_dir}/${basename} ${working_dir}/final_sample_exclude
 
-# //TODO again there is a duplication of the report file, done to protect against dropping from an original file, so either keep duplication here and remove from step 1, or remove here...
-## my feeling is it is better to leave the duplication here, so it behaves in a safe way if this is run independantly. This is the only step that has the potential to modify the .report file
+######################### END INITIAL QC ##############################
 
 
 
 
+######################### START OPTICALL BRANCH ##############################
 
 
 # TODO -- move each branch line into a sparate script file so can run concurrently where they branch
@@ -85,9 +118,9 @@ echo "3) Run opticall as an array job on each chr"
 # input: cleaned gs.report file
 # output: .calls and .prob files of opticall
 #------------------------------------------------------------------------
+#1) chunk the Genome Studio report file by chromosom
 qsub -q short.q -N chunking -hold_jid drop-bad-samples ${exome_chip_bin}/sge_opticall_chunker.sh ${working_dir}/${basename}_filt.report ${working_dir}/${basename}_filt.report
 qsub -q short.q -N run-opticall -hold_jid chunking ${exome_chip_bin}/sge_run_opticall.sh ${working_dir}/${basename}_filt.report -meanintfilter
-
 
 
 #------------------------------------------------------------------------
@@ -96,7 +129,8 @@ echo "Concatenate all .calls file into a single .calls file"
 # input: cleaned gs.report file basename
 # output: a single file of aggregated .calls chunks 
 #------------------------------------------------------------------------
-qsub -q short.q -N concat-opticall -hold_jid run-opticall ${exome_chip_bin}/sge_opticall_concat.sh ${working_dir}/${basename}
+qsub -q short.q -N concat-opticall -hold_jid run-opticall ${exome_chip_bin}/sge_opticall_concat.sh ${working_dir}/${basename}  
+
 
 #------------------------------------------------------------------------
 # OPTICALL BRANCH: 
@@ -118,9 +152,9 @@ echo "Update Alleles for Opticall tped"
 echo ""
 # plink update-alleles 
 # input: basename of concatenated opticall tped
-# output: tped file with updated alleles
+# output: .bed file with updated alleles
 #------------------------------------------------------------------------
-qsub -q short.q -N update-alleles_oc -hold_jid opticall2plink ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_opticall-cat /home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/PLINK_update-alleles_map/HumanExome.A.update_alleles.txt
+qsub -q short.q -N update-alleles_oc -hold_jid opticall2plink ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_filt_Opticall /home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/PLINK_update-alleles_map/HumanExome.A.update_alleles.txt    
 
 # convert bed to ped
 # e.g. plink --noweb --bfile gendep_11-002-2013_01_opticall-cat_UA --recode --out gendep_11-002-2013_01_opticall-cat_UA
@@ -129,12 +163,10 @@ qsub -q short.q -N update-alleles_oc -hold_jid opticall2plink ${exome_chip_bin}/
 
 
 
-
-# TODO -- move each branch line into a sparate script file so can run concurrently where they branch
-
+############## START OF ZCALL ######################
 #------------------------------------------------------------------------
 # ZCALL BRANCH: 
-echo "Calibrate Z, find Z which has the best concordance with Gencall, using the QC filtered *.report file"
+echo "Calibrate Z, find Z which has the best concordance with Gencall"
 echo "The R script global.concordance.R will calculate the optimal z"
 # input: working directory, minimum intensity (default value 0.2)
 # output: zcall threshold files, stats files
@@ -161,9 +193,10 @@ echo "Update Alleles for ZCall tped"
 echo ""
 # plink update-alleles 
 # input: basename of zcall tped
-# output: tped file with updated alleles
+# output: .bed file with updated alleles
 #------------------------------------------------------------------------
 qsub -q short.q -N update-alleles_zc -hold_jid zcalling ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_filt_Zcalls /home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/PLINK_update-alleles_map/HumanExome.A.update_alleles.txt
+
 #convert .bed to ped 
 # e.g. plink --noweb --bfile gendep_11-002-2013_01_Zcalls_UA --recode --out gendep_11-002-2013_01_Zcalls_UA
 

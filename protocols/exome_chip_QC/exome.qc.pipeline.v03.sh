@@ -10,8 +10,8 @@
 #$ -V
 ############################
 
-pedfile=${1}
-bedfile=${2}
+pedfile=${1} #input file
+bedfile=${2} #output name
 
 ## 1 GenomeStudio PLINK ped file to PLINK Binary
 echo "- convert ped to bed -"
