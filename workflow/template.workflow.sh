@@ -88,7 +88,7 @@ echo "Post-GenomeStudio Sample QC, output list of samples to drop "
 # output: output list of samples to drop: final_sample_exclude
 # *****//TODO still some outstanding QC steps to implement*****
 #------------------------------------------------------------------------
-qsub -q short.q -N initial-QC hold_jid report2ped ${exome_chip_bin}/exome.qc.pipeline.v03.sh ${working_dir}/${basename} ${working_dir}/${basename}
+qsub -q short.q -N initial-QC -hold_jid report2ped ${exome_chip_bin}/exome.qc.pipeline.v03.sh ${working_dir}/${basename} ${working_dir}/${basename}
 
 
 #------------------------------------------------------------------------
