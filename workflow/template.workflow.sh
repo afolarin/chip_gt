@@ -200,10 +200,12 @@ qsub -q short.q -N update-alleles_zc -hold_jid zcalling ${exome_chip_bin}/sge_up
 #convert .bed to ped 
 # e.g. plink --noweb --bfile gendep_11-002-2013_01_Zcalls_UA --recode --out gendep_11-002-2013_01_Zcalls_UA
 
+
+
 #------------------------------------------------------------------------
 # ZCALL BRANCH: 
 # TODO
-#echo "Post zcall filtering, just a sanity check??? see Jackie Goldstein and Sanger Exome chip group protocols"
+#echo "Post zcall filtering, just a sanity check. see Jackie Goldstein and Sanger Exome chip group protocols"
 #echo ""
 
 # input:
@@ -216,25 +218,21 @@ qsub -q short.q -N update-alleles_zc -hold_jid zcalling ${exome_chip_bin}/sge_up
 
 
 #------------------------------------------------------------------------
-echo ""
-echo ""
-# input:
-# output: 
+# Review pipeline execution and errors
 #------------------------------------------------------------------------
+echo "Pipeline execution: Ctrl+c to exit 'watch qstat'"
+watch qstat
+
+echo "List sge error message files, review for errors where filesize > 0 bytes"
+ls -l *.e*
 
 
 
-
-
-#------------------------------------------------------------------------
-# input:
-# output: 
-#------------------------------------------------------------------------
 
 
 
 #------------------------------------------------------------------------
-# Question to user: do you want to run cleanup script?
+# TODO: Question to user: do you want to run cleanup script?
 # WARNING: this will remove intermdiary files which you may want to look at,
 # and you can always run this at a later date by running xxxxxx-cleanup.sh
 # input:

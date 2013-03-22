@@ -1,1 +1,1 @@
-../protocols/exome_chip_QC/plink.genome.sh
+../protocols_and_QC/exome_chip_QC/plink.genome.sh

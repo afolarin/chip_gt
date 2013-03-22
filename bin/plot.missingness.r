@@ -1,1 +1,1 @@
-../protocols/exome_chip_QC/plot.missingness.r
+../protocols_and_QC/exome_chip_QC/plot.missingness.r
