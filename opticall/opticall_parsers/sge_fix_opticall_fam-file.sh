@@ -24,4 +24,4 @@ plink_fam=${1}
 #------------------------------------------------------------------------
 # inplace removal of the "." at the end of the sample names from the opticall .fam file
 #------------------------------------------------------------------------
-perl -i -lane '@F[0]=$F[0]=~/(.+)\.$/; @F[1]=$F[1]=~/(.+)\.$/; print( join(" ", "@F"))' plink_fam
+perl -i -lane '@F[0]=$F[0]=~/(.+)\.$/; @F[1]=$F[1]=~/(.+)\.$/; print( join(" ", "@F"))' ${plink_fam}

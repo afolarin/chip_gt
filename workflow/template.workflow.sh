@@ -247,12 +247,27 @@ ls -l *.e*
 
 #------------------------------------------------------------------------
 # TODO: Question to user: do you want to run cleanup script?
-# WARNING: this will remove intermdiary files which you may want to look at,
-# and you can always run this at a later date by running xxxxxx-cleanup.sh
-# input:
-# output: 
+#  WARNING: this will remove intermdiary files which you may want to look at,
+#  and you can always run this at a later date by running xxxxxx-cleanup.sh
 #------------------------------------------------------------------------
-
-
-
+echo "-------------------------------------------------------------------"
+echo "-------------------------SUMMARY REPORT----------------------------"
+echo "Here are a list of files which represent endpoints for the pipeline,"
+echo "these are primarily, inputs for analysis in Plink"
+echo ""
+echo "------Opticall Files------"
+echo "Concatenated Opticall Calls file: ${basename}_filt_opticall-cat.calls"
+echo "Output calls file: ${basename}_filt_Opticall.tped"
+echo "Updated Alleles calls file: ${basename}_filt_Opticall_UA.bed, ${basename}_filt_Opticall_UA.bim, ${basename}_filt_Opticall_UA.fam"
+echo ""
+echo ""
+echo "------Zcalll Files--------"
+echo "Output calls file: ${basename}_filt_Zcalls.tped"
+echo "Updated Alleles calls file: ${basename}_filt_Zcalls_UA.bed,  ${basename}_filt_Zcalls_UA.bim, ${basename}_filt_Zcalls_UA.fam"
+echo ""
+echo ""
+echo "------Zcall vs Opticall Comparison--------"
+echo "Plink merge-mode=6 comparison: plink.diff"
+echo ""
+echo ""
 

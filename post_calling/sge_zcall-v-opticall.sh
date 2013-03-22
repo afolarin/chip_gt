@@ -1,3 +1,8 @@
+#!/bin/sh
+#$-S /bin/bash
+#$-cwd
+#$-V
+
 #########################################################################
 # -- Author: Amos Folarin                                               #
 # -- Organisation: KCL/SLaM                                             #
@@ -23,5 +28,5 @@ opticall_bed=${2}
 plink --noweb --bfile ${zcall_bed} --bmerge ${opticall_bed}.bed ${opticall_bed}.bim ${opticall_bed}.fam --merge-mode 6
 
 #plink merge.mmode=7 -- Report mismatching non-missing calls (diff mode -- do not merge)
-plink --noweb --bfile ${zcall_bed} --bmerge ${opticall_bed}.bed ${opticall_bed}.bim ${opticall_bed}.fam --merge-mode 7
+#plink --noweb --bfile ${zcall_bed} --bmerge ${opticall_bed}.bed ${opticall_bed}.bim ${opticall_bed}.fam --merge-mode 7
 
