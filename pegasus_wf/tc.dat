@@ -1,18 +1,132 @@
 # This is the transformation catalog. It lists information about each of the
 # executables that are used by the workflow.
 
-tr count {
+/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/
+
+tr sge_GSreport2ped.sh {
     site PegasusVM {
-	pfn "/home/pipeline/WORKFLOWs/tutorials/simplewf/bin/count"
+        pfn "/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/sge_GSreport2ped.sh" 
         arch "x86_64"
         os "linux"
         type "INSTALLED"
     }
 }
 
-tr sort {
+
+tr exome.qc.pipeline.v03.sh {
+    site PegasusVM {   
+        pfn "/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/exome.qc.pipeline.v03.sh"
+        arch "x86_64"
+        os "linux"
+        type "INSTALLED"
+    }
+}
+
+
+tr sge_dropBadSamples.sh {
     site PegasusVM {
-	pfn "/home/pipeline/WORKFLOWs/tutorials/simplewf/bin/sort"
+        pfn "/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/sge_dropBadSamples.sh"
+        arch "x86_64"
+        os "linux"
+        type "INSTALLED"
+    }
+}
+
+
+tr sge_opticall_chunker.sh {
+    site PegasusVM {
+        pfn "/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/sge_opticall_chunker.sh"
+        arch "x86_64"
+        os "linux"
+        type "INSTALLED"
+    }
+}
+
+
+tr sge_run_opticall.sh {
+    site PegasusVM {
+        pfn "/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/sge_run_opticall.sh"
+        arch "x86_64"
+        os "linux"
+        type "INSTALLED"
+    }
+}
+
+
+tr sge_opticall_concat.sh {
+    site PegasusVM {
+        pfn "/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/sge_opticall_concat.sh"
+        arch "x86_64"
+        os "linux"
+        type "INSTALLED"
+    }
+}
+
+
+tr sge_op2plink_concat.sh {
+    site PegasusVM {
+        pfn "/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/sge_op2plink_concat.sh"
+        arch "x86_64"
+        os "linux"
+        type "INSTALLED"
+    }
+}
+
+
+tr sge_update-alleles.sh {
+    site PegasusVM {
+        pfn "/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/sge_update-alleles.sh"
+        arch "x86_64"
+        os "linux"
+        type "INSTALLED"
+    }
+}
+
+
+tr sge_fix_opticall_fam-file.sh {
+    site PegasusVM {
+        pfn "/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/sge_fix_opticall_fam-file.sh"
+        arch "x86_64"
+        os "linux"
+        type "INSTALLED"
+    }
+}
+
+
+tr sge_calcThresholds.sh {
+    site PegasusVM {
+        pfn "/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/sge_calcThresholds.sh"
+        arch "x86_64"
+        os "linux"
+        type "INSTALLED"
+    }
+}
+
+
+tr sge_global_concordance.sh {
+    site PegasusVM {
+        pfn "/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/sge_global_concordance.sh"
+        arch "x86_64"
+        os "linux"
+        type "INSTALLED"
+    }
+}
+
+tr sge_zcall.sh {
+    site PegasusVM {
+        pfn "/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/sge_zcall.sh"
+        arch "x86_64"
+        os "linux"
+        type "INSTALLED"
+    }
+}
+
+
+
+
+tr sge_zcall-v-opticall.sh {
+    site PegasusVM {
+        pfn "/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/sge_zcall-v-opticall.sh"
         arch "x86_64"
         os "linux"
         type "INSTALLED"
