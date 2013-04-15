@@ -1,0 +1,1 @@
+../protocols_and_QC/exome_chip_QC/exome.qc.pipeline.v04.sh

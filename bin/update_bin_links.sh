@@ -13,7 +13,7 @@
 #USAGE:
 # run from the bin directory
 # bash update_bin_links.sh </myroot/path>  
-
+# e.g. from a typical top level bin dir: ./update_bin_links.sh ..
 
 #ARGS:
 root_dir=$1  # root dir to start searching with the find command
