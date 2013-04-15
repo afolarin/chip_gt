@@ -96,7 +96,7 @@ plink \
 --out ${bedfile}_03_LDpruned \
 --Z-genome;
 
-zcat ${bedfile}_03_LDpruned.genome | awk '$10>0.1875' >   ${bedfile}_03_LDpruned.genome.related;
+zcat ${bedfile}_03_LDpruned.genome.gz | awk '$10>0.1875' >   ${bedfile}_03_LDpruned.genome.related;
 
 cat  ${bedfile}_03_LDpruned.genome.related | awk '{print $1"\t"$2}' > ${bedfile}_03_LDpruned.genome.related.sample.remove;
 
