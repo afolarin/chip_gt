@@ -51,8 +51,10 @@ export PATH=$PATH:${exome_chip_bin}:${zcall_bin}:${opticall_bin}:${working_dir}
 
 # report file basename e.g. moorfields_191112_zCall_01_filt_faster-version.report
 # NOTE: if later this doesn't work with pegasus, just wrap them in a file pass and source
-export data_path="/home/afolarinbrc/pipelines/DATA/exome_chip/GENDEP_test"
-export basename="gendep_11-002-2013_01"  # leave off suffix ".report" for basename
+#export data_path="/home/afolarinbrc/pipelines/DATA/exome_chip/GENDEP_test"
+#export basename="gendep_11-002-2013_01"  # leave off suffix ".report" for basename
+export data_path="/scratch/project/pipelines/DATA/exome_chip/CANCER_EXOME"
+export basename="Exome_Cancer_Marinaki_10_04_13_intensity_data_fix"  # leave off suffix ".report" for basename
 queue_name="short.q"
 
 ######################### START INITIAL QC ##############################
@@ -88,7 +90,7 @@ echo "Post-GenomeStudio Sample QC, output list of samples to drop "
 # output: output list of samples to drop: final_sample_exclude
 # *****//TODO still some outstanding QC steps to implement*****
 #------------------------------------------------------------------------
-qsub -q ${queue_name} -N initial-QC -hold_jid report2ped ${exome_chip_bin}/exome.qc.pipeline.v03.sh ${working_dir}/${basename} ${working_dir}/${basename}
+qsub -q ${queue_name} -N initial-QC -hold_jid report2ped ${exome_chip_bin}/exome.qc.pipeline.v04.sh ${working_dir}/${basename} ${working_dir}/${basename}
 
 
 #------------------------------------------------------------------------
