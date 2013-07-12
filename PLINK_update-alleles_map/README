@@ -1,0 +1,43 @@
+#########################################################################
+# -- Author: Amos Folarin                                               #
+# -- Organisation: KCL/SLaM                                             #
+# -- Email: amosfolarin@gmail.com                                       #
+#########################################################################
+
+
+#------------------------------------------------------------------------
+# Update Allele files can be downloaded athttp://www.well.ox.ac.uk/~wrayner/strand/ABtoTOPstrand.html
+# for more info:  http://www.well.ox.ac.uk/~wrayner/strand/
+#------------------------------------------------------------------------
+
+So far we have:
+
+#---- HumanExome----
+HumanExome_1.0:
+HumanExome.A.update_alleles.txt 
+
+HumanExome-12v1-1_A:
+HumanExome-12v1-1_A.update_alleles.txt.zip
+
+#----HumanCoreExome:----
+HumanCoreExome-12v1-0_B:
+HumanCoreExome-12v1-0_B.update_alleles.txt.zip
+
+#----HumanOmniExpress----
+HumanOmniExpressExome-8v1_A:
+HumanOmniExpressExome-8v1_A.update_alleles.txt.zip
+
+HumanOmniExpress-12v1_A:
+HumanOmniExpress-12v1_A.update_alleles.txt.zip
+
+HumanOmniExpress-12v1_H:
+HumanOmniExpress-12v1_H.update_alleles.txt.zip
+
+HumanOmniExpress-12v1_J:
+HumanOmniExpress-12v1_J.update_alleles.txt.zip
+
+HumanOmniExpress-12v1-Multi_B:
+HumanOmniExpress-12v1-Multi_B.update_alleles.txt.zip
+
+HumanOmniExpress-12v1-Multi_C:
+HumanOmniExpress-12v1-Multi_C.update_alleles.txt.zip
