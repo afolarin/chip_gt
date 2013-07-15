@@ -27,9 +27,10 @@
 # 3) working_dir= path to working dir, use pwd when run from the working dir (typical usage)
 
 ##### for each dataset run through the pipeline define these paths
-# 4) data_path = path to folder containing the genome studio report file 
-# 5) basename = the genome studio report file (in Zcall format)
-# 6) queue_name = Sun Grid Engine queue name 
+# 4) update_alleles file, select the correct on for your chiptype. see the pipelines/exome_chip/PLINK_update-alleles_map. if not there then see the README in  that dir
+# 5) data_path = path to folder containing the genome studio report file 
+# 6) basename = the filename root of the Genome Studio report file (in Zcall format)
+# 7) queue_name = Sun Grid Engine queue name 
 ##### execute the pipeline:
 # bash template.workflow.sh
 
@@ -39,21 +40,19 @@
 
 
 #------------------------------------------------------------------------
-# Some environmental variables required for child processes (all )
+# Some environmental variables required for child processes (all) and 
+# therefore are passed on by the environment variable -V in sge scripts
 #------------------------------------------------------------------------
 # scripts bins pathed -- use git repo versions
-exome_chip_bin=/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/
-zcall_bin=/share/apps/zcall_current/Version3_GenomeStudio/bin/
-opticall_bin=/share/apps/opticall_current/bin
+exome_chip_bin="/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/"
+zcall_bin="/share/apps/zcall_current/Version3_GenomeStudio/bin/"
+opticall_bin="/share/apps/opticall_current/bin"
 working_dir=`pwd`  #//TODO may want possibility of outputting to a different dir...
 export PATH=$PATH:${exome_chip_bin}:${zcall_bin}:${opticall_bin}:${working_dir}
 
-
-# report file basename e.g. moorfields_191112_zCall_01_filt_faster-version.report
-# NOTE: if later this doesn't work with pegasus, just wrap them in a file pass and source
-#export data_path="/home/afolarinbrc/pipelines/DATA/exome_chip/GENDEP_test"
-#export basename="gendep_11-002-2013_01"  # leave off suffix ".report" for basename
+update_alleles_file="/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/PLINK_update-alleles_map/HumanExome-12v1-1_A.update_alleles.txt"
 export data_path="/scratch/project/pipelines/DATA/exome_chip/CANCER_EXOME"
+# report file basename e.g. moorfields_191112_zCall_01_filt_faster-version.report
 export basename="Exome_Cancer_Marinaki_10_04_13_intensity_data_fix"  # leave off suffix ".report" for basename
 queue_name="short.q"
 
@@ -156,7 +155,7 @@ echo ""
 # input: basename of concatenated opticall tped
 # output: .bed file with updated alleles
 #------------------------------------------------------------------------
-qsub -q ${queue_name} -N update-alleles_oc -hold_jid opticall2plink ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_filt_Opticall /home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/PLINK_update-alleles_map/HumanExome.A.update_alleles.txt    
+qsub -q ${queue_name} -N update-alleles_oc -hold_jid opticall2plink ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_filt_Opticall ${update_alleles_file} 
 
 #small fix for the .fam file produced with opticall, remove the "." left on samplenames created
 qsub -q ${queue_name} -N fix-oc-fam-file -hold_jid update-alleles_oc  ${exome_chip_bin}/sge_fix_opticall_fam-file.sh ${working_dir}/${basename}_filt_Opticall_UA.fam
@@ -204,7 +203,7 @@ echo ""
 # input: basename of zcall tped
 # output: .bed file with updated alleles
 #------------------------------------------------------------------------
-qsub -q ${queue_name} -N update-alleles_zc -hold_jid zcalling ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_filt_Zcalls /home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/PLINK_update-alleles_map/HumanExome.A.update_alleles.txt
+qsub -q ${queue_name} -N update-alleles_zc -hold_jid zcalling ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_filt_Zcalls ${update_alleles_file} 
 
 #convert .bed to ped 
 # e.g. plink --noweb --bfile gendep_11-002-2013_01_Zcalls_UA --recode --out gendep_11-002-2013_01_Zcalls_UA
@@ -280,4 +279,58 @@ Plink merge-mode=6 comparison: plink.diff
 Optical v Zcall concordance: plink.log
 
 EOF
+
+
+
+#------------------------------------------------------------------------
+# Give the user a commandline option to clean-up the directory of intermediate files
+# after the run. 
+#------------------------------------------------------------------------
+removeList=`ls -I ${basename}_filt_opticall-cat.calls -I ${basename}_filt_Opticall.tped -I ${basename}_filt_Opticall_UA.bed -I ${basename}_filt_Opticall_UA.bim -I ${basename}_filt_Opticall_UA.fam \
+	-I ${basename}_filt_Zcalls.tped -I ${basename}_filt_Zcalls_UA.bed -I ${basename}_filt_Zcalls_UA.bim -I ${basename}_filt_Zcalls_UA.fam`
+	rm {${removeList}}
+}
+
+
+echo "Do you want to run the cleanup script? "
+echo "Answer: yes / no"
+read answer
+while [ ${answer}!= "yes" || $answer != "no" ]
+do
+	echo "Answer: yes / no"
+	read answer
+
+done
+
+if (( $answer == "yes" ))
+then
+
+        echo "WARNING! this will get rid of all intermediate files from the run"
+        echo "SURE YOU WANT TO DO THIS?"
+        echo "Answer: yes / no"
+
+        read answer2
+        echo "Answer: yes / no"
+	
+	while [ ${answer}!= "yes" || $answer != "no" ]
+	do
+		echo "Answer: yes / no"
+        	read answer
+
+	done
+	
+        if (( $answer2 == "yes" ))
+        then
+		#do some cleanup... currently just getting rid of anything that isn't an endpoint... but maybe this is too much?
+                echo $answer2
+                removeList=xargs -0 ls <<< "-I ${basename}_filt_opticall-cat.calls \
+		-I ${basename}_filt_Opticall.tped -I ${basename}_filt_Opticall_UA.bed \
+		-I ${basename}_filt_Opticall_UA.bim -I ${basename}_filt_Opticall_UA.fam \
+		-I ${basename}_filt_Zcalls.tped -I ${basename}_filt_Zcalls_UA.bed \
+		-I ${basename}_filt_Zcalls_UA.bim -I ${basename}_filt_Zcalls_UA.fam"
+		xargs -0 rm <<< ${removeList}
+
+        fi
+
+fi
 
