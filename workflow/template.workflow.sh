@@ -278,59 +278,10 @@ Updated Alleles calls file: ${basename}_filt_Zcalls_UA.bed,  ${basename}_filt_Zc
 Plink merge-mode=6 comparison: plink.diff
 Optical v Zcall concordance: plink.log
 
+
+NOTE: to cleanup the directory run the /pipelines/exomechip/
+
 EOF
 
 
-
-#------------------------------------------------------------------------
-# Give the user a commandline option to clean-up the directory of intermediate files
-# after the run. 
-#------------------------------------------------------------------------
-removeList=`ls -I ${basename}_filt_opticall-cat.calls -I ${basename}_filt_Opticall.tped -I ${basename}_filt_Opticall_UA.bed -I ${basename}_filt_Opticall_UA.bim -I ${basename}_filt_Opticall_UA.fam \
-	-I ${basename}_filt_Zcalls.tped -I ${basename}_filt_Zcalls_UA.bed -I ${basename}_filt_Zcalls_UA.bim -I ${basename}_filt_Zcalls_UA.fam`
-	rm {${removeList}}
-}
-
-
-echo "Do you want to run the cleanup script? "
-echo "Answer: yes / no"
-read answer
-while [ ${answer}!= "yes" || $answer != "no" ]
-do
-	echo "Answer: yes / no"
-	read answer
-
-done
-
-if (( $answer == "yes" ))
-then
-
-        echo "WARNING! this will get rid of all intermediate files from the run"
-        echo "SURE YOU WANT TO DO THIS?"
-        echo "Answer: yes / no"
-
-        read answer2
-        echo "Answer: yes / no"
-	
-	while [ ${answer}!= "yes" || $answer != "no" ]
-	do
-		echo "Answer: yes / no"
-        	read answer
-
-	done
-	
-        if (( $answer2 == "yes" ))
-        then
-		#do some cleanup... currently just getting rid of anything that isn't an endpoint... but maybe this is too much?
-                echo $answer2
-                removeList=xargs -0 ls <<< "-I ${basename}_filt_opticall-cat.calls \
-		-I ${basename}_filt_Opticall.tped -I ${basename}_filt_Opticall_UA.bed \
-		-I ${basename}_filt_Opticall_UA.bim -I ${basename}_filt_Opticall_UA.fam \
-		-I ${basename}_filt_Zcalls.tped -I ${basename}_filt_Zcalls_UA.bed \
-		-I ${basename}_filt_Zcalls_UA.bim -I ${basename}_filt_Zcalls_UA.fam"
-		xargs -0 rm <<< ${removeList}
-
-        fi
-
-fi
 
