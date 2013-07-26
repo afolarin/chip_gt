@@ -1,0 +1,1 @@
+../workflow/exome_chip.workflow.sjn.sh
