@@ -2,22 +2,28 @@
 
 #########################################################################
 # -- Author: Amos Folarin                                               #
-# -- Organisation: KCL/SLaM                                             #
+# -- Organisation: KCL/SLaM/BRC-MH                                      #
 # -- Email: amosfolarin@gmail.com                                       #
+# -- Edits: Stephen Newhouse, stephen.newhouse@kcl.ac.uk, 23.07.2013    #
 #########################################################################
 
 # DESC:
+
 # Genotype calling for Exome Chip.
 # This is the template script for running the exome chip pipeline this will run 
 # from the input of a Genome Studio report file (zcall format, see docs)
+
 # 1) Run QC on the report file
 # 2) Run Opticall -- output:  <name>_filt_Opticall.bed
 # 2) Run Zcall -- output:  <name>_filt_Zcall.bed
-# 3) Compare results of the two rare genotype callers  
-
+# 3) Compare results of the two rare genotype callers and output list of SNPs and SAMPLES that differ in GT call between Zcall and Opticall  
+# 4) Run veru basic QC on called genotypes : freq, HWE, missing and genotype based sex check
+# 5) Cleans up working directory
 
 # USAGE:
 ##### require enviromnental variables populated correctly
+
+
 
 # 1) exome_chip_bin = path to the pipeline bin with the scripts bin (....pipelines/exome_chip/bin/)
 # available on 
@@ -28,42 +34,66 @@
 
 ##### for each dataset run through the pipeline define these paths
 # 4) update_alleles file, select the correct on for your chiptype. see the pipelines/exome_chip/PLINK_update-alleles_map. if not there then see the README in  that dir
+
 # 5) data_path = path to folder containing the genome studio report file 
+
 # 6) basename = the filename root of the Genome Studio report file (in Zcall format)
+
 # 7) queue_name = Sun Grid Engine queue name 
-##### execute the pipeline:
-# bash template.workflow.sh
+
+###############################
+##### execute the pipeline ####
+###############################
+
+# sh exome_chip.workflow.sjn  <working_dir> <data_path> <updata_alleles_file> <basename> 
 
 
- 
 
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------# 
 
+echo " START PIPELINE " `date`
 
 #------------------------------------------------------------------------
 # Some environmental variables required for child processes (all) and 
 # therefore are passed on by the environment variable -V in sge scripts
 #------------------------------------------------------------------------
-# scripts bins pathed -- use git repo versions
-exome_chip_bin="/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/"
-zcall_bin="/share/apps/zcall_current/Version3_GenomeStudio/bin/"
-opticall_bin="/share/apps/opticall_current/bin"
-working_dir=`pwd`  #//TODO may want possibility of outputting to a different dir...
-export PATH=$PATH:${exome_chip_bin}:${zcall_bin}:${opticall_bin}:${working_dir}
 
-update_alleles_file="/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/PLINK_update-alleles_map/HumanExome-12v1-1_A.update_alleles.txt"
-export data_path="/scratch/project/pipelines/DATA/exome_chip/CANCER_EXOME"
-# report file basename e.g. moorfields_191112_zCall_01_filt_faster-version.report
-export basename="Exome_Cancer_Marinaki_10_04_13_intensity_data_fix"  # leave off suffix ".report" for basename
-queue_name="short.q"
+# scripts bins pathed -- use git repo versions
+
+exome_chip_bin="/home/afolarinbrc/workspace/git_projects/pipelines/exome_chip/bin/"
+
+zcall_bin="/share/apps/zcall_current/Version3_GenomeStudio/bin/"
+
+opticall_bin="/share/apps/opticall_current/bin"
+
+#----------------------------------##
+## set/get OPTS from commanmd line ##
+#----------------------------------##
+
+working_dir=${1}  # PATH TO WHERE YOU WANT ALL OUTPUT
+export PATH=$PATH:${exome_chip_bin}:${zcall_bin}:${opticall_bin}:${working_dir}
+export data_path=${2} # PATH TO GS REPORT FILE
+update_alleles_file=${3} # PATH/NAME.txt of update alleles file. email us for details. MUST MATCH YOUR GENOTYPING CHIP, TYPE/VERSION !!!!!!!!!!!!!!!!!!
+export basename=${4}  # leave off suffix ".report" for basename. Report from GS
+
+###############
+## set SGE Q ##
+###############
+
+queue_name="short.q,long.q" 
 
 ######################### START INITIAL QC ##############################
+
 #------------------------------------------------------------------------
 # INITIAL QC
 echo "Make a local copy of the report file"
 # input: data location for gs.report
 # output: working dir copy of gs.report
 #------------------------------------------------------------------------
-cp ${data_path}/${basename}.report ${working_dir}/${basename}.report
+cp -v ${data_path}/${basename}.report ${working_dir}/${basename}.report
 
 
 #------------------------------------------------------------------------
@@ -205,45 +235,56 @@ echo ""
 #------------------------------------------------------------------------
 qsub -q ${queue_name} -N update-alleles_zc -hold_jid zcalling ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_filt_Zcalls ${update_alleles_file} 
 
-#convert .bed to ped 
-# e.g. plink --noweb --bfile gendep_11-002-2013_01_Zcalls_UA --recode --out gendep_11-002-2013_01_Zcalls_UA
-
-
-
-#------------------------------------------------------------------------
-# ZCALL BRANCH: 
-# TODO
-#echo "Post zcall filtering, just a sanity check. see Jackie Goldstein and Sanger Exome chip group protocols"
-#echo ""
-
-# input:
-# output: 
-#------------------------------------------------------------------------
-# sge_post-z-qc.sh <tpedBasename>
-
 ################ END OF ZCALL###########################
 
 
+################# POST CALLING BASIC QC AND COMPARISONS ################
 
 #------------------------------------------------------------------------
 # Compare the Zcall and Opticall calls
 #------------------------------------------------------------------------
+echo "Comapre the Zcall and Opticall calls"
+echo ""
 qsub -q ${queue_name} -N compareCalls -hold_jid update-alleles_zc,fix-oc-fam-file ${exome_chip_bin}/sge_zcall-v-opticall.sh ${working_dir}/${basename}_filt_Zcalls_UA ${working_dir}/${basename}_filt_Opticall_UA
+ 
+#------------------------------------------------------------------------
+# BASIC PLINK QC of the Zcall and Opticall calls 
+# SJNewhouse, stephen.newhouse@kcl.ac.uk, 23.07.2013 
+#------------------------------------------------------------------------
+echo "running some very basic plink QC on the final calls produced by zCall and Opticall"
+echo ""
+qsub -q ${queue_name} -N basicQCfinalCalls -hold_jid compareCalls ${exome_chip_bin}/sge_basic_plinkqc_zcall_and_opticall.sh ${working_dir}/${basename}_filt_Zcalls_UA ${working_dir}/${basename}_filt_Opticall_UA
+
+################# END POST CALLING BASIC QC AND COMPARISONS ################
 
 
+################# START CLEAN UP  ################
 
+#------------------------------------------------------------------------
+# Clean up  SJN EDIT
+# added by SJNewhouse, stephen.newhouse@kcl.ac.uk, 23.07.2013 
+#------------------------------------------------------------------------
+echo "Cleaning up working directory"
+echo ""
+qsub -q ${queue_name} -N CleanUpWorkingDir -hold_jid basicQC_final_calls ${exome_chip_bin}/sge_CleanUpWorkingDir.sh ${working_dir}
+
+
+################# END CLEAN UP  ################
+
+echo " END PIPELINE " `date`
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 #------------------------------------------------------------------------
 # Review pipeline execution and errors
 #------------------------------------------------------------------------
-echo "Pipeline execution: Ctrl+c to exit 'watch qstat'"
-watch qstat
-
-echo "List sge error message files, review for errors where filesize > 0 bytes"
-ls -l *.e*
-
+#echo "Pipeline execution: Ctrl+c to exit 'watch qstat'"
+#watch qstat
+#echo "List sge error message files, review for errors where filesize > 0 bytes"
+#ls -l *.e*
 
 
+## SJN TOTDO: NEW README AT END OF RUN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 #------------------------------------------------------------------------
@@ -255,33 +296,33 @@ ls -l *.e*
 #------------------------------------------------------------------------
 # Create a report file to which are the pertinent files in the
 # working directory
-echo "Pertinent files are listed in the Pipeline_Report.txt"
+#echo "Pertinent files are listed in the Pipeline_Report.txt"
 #------------------------------------------------------------------------
-cat >>Pipeline_Report.txt <<EOF
--------------------------------------------------------------------
--------------------------SUMMARY REPORT----------------------------
-Here are a list of files which represent endpoints for the pipeline,
-these are primarily, inputs for analysis in Plink
-
-------Opticall Files------
-Concatenated Opticall Calls file: ${basename}_filt_opticall-cat.calls
-Output calls file: ${basename}_filt_Opticall.tped
-Updated Alleles calls file: ${basename}_filt_Opticall_UA.bed, ${basename}_filt_Opticall_UA.bim, ${basename}_filt_Opticall_UA.fam
-
-
-------Zcalll Files--------
-Output calls file: ${basename}_filt_Zcalls.tped
-Updated Alleles calls file: ${basename}_filt_Zcalls_UA.bed,  ${basename}_filt_Zcalls_UA.bim, ${basename}_filt_Zcalls_UA.fam
-
-
-------Zcall vs Opticall Comparison--------
-Plink merge-mode=6 comparison: plink.diff
-Optical v Zcall concordance: plink.log
-
-
-NOTE: to cleanup the directory run the /pipelines/exomechip/
-
-EOF
+#cat >>Pipeline_Report.txt <<EOF
+#-------------------------------------------------------------------
+#-------------------------SUMMARY REPORT----------------------------
+#Here are a list of files which represent endpoints for the pipeline,
+#these are primarily, inputs for analysis in Plink
+#
+#------Opticall Files------
+#Concatenated Opticall Calls file: ${basename}_filt_opticall-cat.calls
+#Output calls file: ${basename}_filt_Opticall.tped
+#Updated Alleles calls file: ${basename}_filt_Opticall_UA.bed, ${basename}_filt_Opticall_UA.bim, ${basename}_filt_Opticall_UA.fam
+#
+#
+#------Zcalll Files--------
+#Output calls file: ${basename}_filt_Zcalls.tped
+#Updated Alleles calls file: ${basename}_filt_Zcalls_UA.bed,  ${basename}_filt_Zcalls_UA.bim, ${basename}_filt_Zcalls_UA.fam
+#
+#
+#------Zcall vs Opticall Comparison--------
+#Plink merge-mode=6 comparison: plink.diff
+#Optical v Zcall concordance: plink.log
+#
+#
+#NOTE: to cleanup the directory run the /pipelines/exomechip/
+#
+#EOF
 
 
 
