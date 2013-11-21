@@ -87,7 +87,7 @@ queue_name="short.q,long.q"
 ## create update alleles ##
 ###########################
 
-create_update_allele_file.sh ${manifest_file} 
+${exome_chip_bin}/create_update_allele_file.sh ${manifest_file} 
 
 ######################### START INITIAL QC ##############################
 
