@@ -33,7 +33,7 @@
 # 3) working_dir= path to working dir, use pwd when run from the working dir (typical usage)
 
 ##### for each dataset run through the pipeline define these paths
-# 4) update_alleles file, select the correct on for your chiptype. see the pipelines/exome_chip/PLINK_update-alleles_map. if not there then see the README in  that dir
+# 4) manifest_file: illumina manifest file for the chip type
 
 # 5) data_path = path to folder containing the genome studio report file 
 
@@ -45,7 +45,7 @@
 ##### execute the pipeline ####
 ###############################
 
-# sh exome_chip.workflow.sjn  <working_dir> <data_path> <updata_alleles_file> <basename> 
+# sh exome_chip.workflow.sjn  <working_dir> <data_path> <manifest_file.csv> <basename> 
 
 
 
@@ -73,7 +73,7 @@ opticall_bin="/share/apps/opticall_current/bin"
 working_dir=${1}  # PATH TO WHERE YOU WANT ALL OUTPUT
 export PATH=$PATH:${exome_chip_bin}:${zcall_bin}:${opticall_bin}:${working_dir}
 export data_path=${2} # PATH TO GS REPORT FILE
-update_alleles_file=${3} # PATH/NAME.txt of update alleles file. email us for details. MUST MATCH YOUR GENOTYPING CHIP, TYPE/VERSION !!!!!!!!!!!!!!!!!!
+manifest_file=${3} # path to the manifest_file.csv: illumina manifest file for the chip type
 export basename=${4}  # leave off suffix ".report" for basename. Report from GS
 
 ###############
@@ -81,6 +81,13 @@ export basename=${4}  # leave off suffix ".report" for basename. Report from GS
 ###############
 
 queue_name="short.q,long.q" 
+
+
+###########################
+## create update alleles ##
+###########################
+
+create_update_allele_file.sh ${manifest_file} 
 
 ######################### START INITIAL QC ##############################
 
@@ -182,7 +189,7 @@ echo ""
 # input: basename of concatenated opticall tped
 # output: .bed file with updated alleles
 #------------------------------------------------------------------------
-qsub -q ${queue_name} -N update-alleles_oc -hold_jid opticall2plink ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_filt_Opticall ${update_alleles_file} 
+qsub -q ${queue_name} -N update-alleles_oc -hold_jid opticall2plink ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_filt_Opticall "update_alleles_file"
 
 #small fix for the .fam file produced with opticall, remove the "." left on samplenames created
 qsub -q ${queue_name} -N fix-oc-fam-file -hold_jid update-alleles_oc  ${exome_chip_bin}/sge_fix_opticall_fam-file.sh ${working_dir}/${basename}_filt_Opticall_UA.fam
@@ -230,7 +237,7 @@ echo ""
 # input: basename of zcall tped
 # output: .bed file with updated alleles
 #------------------------------------------------------------------------
-qsub -q ${queue_name} -N update-alleles_zc -hold_jid zcalling ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_filt_Zcalls ${update_alleles_file} 
+qsub -q ${queue_name} -N update-alleles_zc -hold_jid zcalling ${exome_chip_bin}/sge_update-alleles.sh ${working_dir}/${basename}_filt_Zcalls "update_alleles_file"
 
 ################ END OF ZCALL###########################
 
