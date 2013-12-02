@@ -23,7 +23,7 @@ opticall_bed=${2}
 #------------------------------------------------------------------------
 
 ## Freq, HWE and missing rates
-for i in freq hardy miss;do
+for i in freq hardy missing;do
 plink --noweb --bfile ${zcall_bed}    --allow-no-sex --out ${zcall_bed}    --${i};
 plink --noweb --bfile ${opticall_bed} --allow-no-sex --out ${opticall_bed} --${i};
 done;
